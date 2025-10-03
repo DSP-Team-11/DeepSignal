@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="Advanced 1D Signal Viewer for medical ECG/EEG and acoustic signals including Doppler, radar, drone, and submarine analysis">
+        <meta name="author" content="">
+
+        <title>DeepSignal</title>
+
+        <!-- CSS FILES -->        
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Open+Sans&display=swap" rel="stylesheet">
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/bootstrap-icons.css" rel="stylesheet">
+        <link href="css/templatemo-topic-listing.css" rel="stylesheet">      
+    </head>
+    
+    <body id="top">
+
+        <main>
+
+            <nav class="navbar navbar-expand-lg">
+                <div class="container">
+                    <a class="navbar-brand" href="index.html">
+                        <i class="bi-activity"></i>
+                        <span>DeepSignal</span>
+                    </a>
+
+                    <div class="d-lg-none ms-auto me-4">
+                        <a href="#top" class="navbar-icon bi-person smoothscroll"></a>
+                    </div>
+    
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+    
+                    <div class="collapse navbar-collapse" id="navbarNav">
+                        <ul class="navbar-nav ms-lg-5 me-lg-auto">
+                            <li class="nav-item">
+                                <a class="nav-link click-scroll" href="#section_1">Home</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link click-scroll" href="#section_2">Categories</a>
+                            </li>
+    
+                            <li class="nav-item">
+                                <a class="nav-link click-scroll" href="#section_3">Features</a>
+                            </li>
+
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="navbarLightDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">Applications</a>
+
+                                <ul class="dropdown-menu dropdown-menu-light" aria-labelledby="navbarLightDropdownMenuLink">
+                                    <li><a class="dropdown-item" href="medical-signals.html">Medical Signals</a></li>
+                                    <li><a class="dropdown-item" href="acoustic-signals.html">Acoustic Signals</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                        <div class="d-none d-lg-block">
+                            <a href="#top" class="navbar-icon bi-person smoothscroll"></a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+            
+
+            <section class="hero-section d-flex justify-content-center align-items-center" id="section_1">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-lg-8 col-12 mx-auto">
+                            <h1 class="text-white text-center">Beyond the Waveform.</h1>
+                            <h6 class="text-center">Advanced 1D signal visualization platform for medical and acoustic data analysis</h6>
+
+                            <!-- <form method="get" class="custom-form mt-4 pt-2 mb-lg-0 mb-5" role="search">
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text bi-search" id="basic-addon1"></span>
+                                    <input name="keyword" type="search" class="form-control" id="keyword" placeholder="Search ECG, EEG, Doppler, Radar, Drone signals..." aria-label="Search">
+                                    <button type="submit" class="form-control">Search</button>
+                                </div>
+                            </form> -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="featured-section">
+      
+<div class="container">
+  <div class="row justify-content-center">
+
+    <!-- First Block - White Background -->
+    <div class="col-lg-6 col-md-6 col-12 mb-4">
+      <div class="custom-block bg-white shadow-lg h-100 d-flex flex-column p-4">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div class="flex-grow-1">
+            <h5 class="mb-2">Medical Signals</h5>
+            <p class="mb-3">
+              Advanced ECG and EEG analysis with multi-mode visualization and AI-powered abnormality detection.
+            </p>
+          </div>
+          <span class="icon-box d-flex justify-content-center align-items-center ms-3">
+            <img src="icons/icons8-heart-rate-monitor-64.png" alt="Heart" width="28" height="28">
+          </span>
+        </div>
+        <div class="mt-auto">
+          <a href="medical-signals.html" class="btn custom-btn w-100">Explore Features</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Second Block - With Background Image -->
+    <div class="col-lg-6 col-md-6 col-12 mb-4">
+      <div class="custom-block custom-block-overlay h-100 d-flex flex-column">
+        <img src="images/businesswoman-using-tablet-analysis.jpg" 
+             class="custom-block-image img-fluid" 
+             alt="Signal Analysis Interface">
+
+        <div class="custom-block-overlay-text d-flex flex-column h-100 p-4">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="flex-grow-1">
+              <h5 class="text-white mb-2">Acoustic & Radar Signals</h5>
+              <p class="text-white mb-3">
+                Comprehensive analysis of Doppler shift, radar signals, drone detection, and submarine acoustic signatures using advanced signal processing techniques.
+              </p>
+            </div>
+            <span class="icon-box d-flex justify-content-center align-items-center ms-3">
+    <img src="icons/icons8-signal-50.png" alt="Signal" width="28" height="28" style="filter: brightness(0) invert(1);">
+</span>
+          </div>
+          <div class="mt-auto">
+            <a href="acoustic-signals.html" class="btn custom-btn w-100">Explore Features</a>
+          </div>
+        </div>
+
+        <div class="section-overlay"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+      
+    </div>
+  </div>
+</section>
+
+<!-- ---------------------------------------------------------- -->
+
+<section class="explore-section section-padding" id="section_2">
+  <div class="container">
+    <div class="row">
+      <div class="col-12 text-center">
+        <h2 class="mb-4">Signal Categories</h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="container-fluid">
+    <div class="row">
+      <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="medical-tab" data-bs-toggle="tab" data-bs-target="#medical-tab-pane" type="button" role="tab" aria-controls="medical-tab-pane" aria-selected="true">Medical</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="acoustic-tab" data-bs-toggle="tab" data-bs-target="#acoustic-tab-pane" type="button" role="tab" aria-controls="acoustic-tab-pane" aria-selected="false">Acoustic</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="radar-tab" data-bs-toggle="tab" data-bs-target="#radar-tab-pane" type="button" role="tab" aria-controls="radar-tab-pane" aria-selected="false">Radar</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="analysis-tab" data-bs-toggle="tab" data-bs-target="#analysis-tab-pane" type="button" role="tab" aria-controls="analysis-tab-pane" aria-selected="false">Analysis Modes</button>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="row">
+      <div class="col-12">
+        <div class="tab-content" id="myTabContent">
+          
+          <!-- Medical Signals Tab -->
+          <div class="tab-pane fade show active" id="medical-tab-pane" role="tabpanel" aria-labelledby="medical-tab" tabindex="0">
+            <div class="row">
+              <div class="col-lg-4 col-md-6 col-12 mb-4">
+                <div class="custom-block bg-white shadow-lg h-100">
+                  <div class="custom-block-content p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                      <div class="flex-grow-1">
+                        <h5 class="mb-2">ECG Analysis</h5>
+                        <p class="mb-0">Multi-electrode display, sliding mode, XOR comparison, and polar graph visualization.</p>
+                      </div>
+                      <span class="badge bg-medical rounded-pill ms-2">4 Modes</span>
+                    </div>
+                    <div class="text-center mt-4">
+                      <i class="bi-activity display-4 text-primary"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-lg-4 col-md-6 col-12 mb-4">
+                <div class="custom-block bg-white shadow-lg h-100">
+                  <div class="custom-block-content p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                      <div class="flex-grow-1">
+                        <h5 class="mb-2">EEG Classification</h5>
+                        <p class="mb-0">AI-powered detection of Alzheimer's, Parkinson's, and other neurological conditions.</p>
+                      </div>
+                      <span class="badge bg-medical rounded-pill ms-2">ML AI</span>
+                    </div>
+                    <div class="text-center mt-4">
+                      <i class="bi-diagram-3 display-4 text-primary"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-lg-4 col-md-6 col-12 mb-4">
+                <div class="custom-block bg-white shadow-lg h-100">
+                  <div class="custom-block-content p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                      <div class="flex-grow-1">
+                        <h5 class="mb-2">Signal Processing</h5>
+                        <p class="mb-0">Advanced filtering, noise reduction, and feature extraction algorithms.</p>
+                      </div>
+                      <span class="badge bg-medical rounded-pill ms-2">Real-time</span>
+                    </div>
+                    <div class="text-center mt-4">
+                      <i class="bi-graph-up-arrow display-4 text-primary"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        
+
+          <!-- Acoustic Signals Tab -->
+          <div class="tab-pane fade" id="acoustic-tab-pane" role="tabpanel" aria-labelledby="analysis-tab" tabindex="0">
+            <div class="row">
+              <div class="col-lg-4 col-md-6 col-12 mb-4">
+                <div class="custom-block bg-white shadow-lg h-100">
+                  <div class="custom-block-content p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                      <div class="flex-grow-1">
+                        <h5 class="mb-2">Doppler Shift</h5>
+                        <p class="mb-0">Real-time Doppler effect analysis with frequency and velocity calculations.</p>
+                      </div>
+                      <span class="badge bg-acoustic rounded-pill ms-2">Physics</span>
+                    </div>
+                    <div class="text-center mt-4">
+                      <i class="bi-soundwave display-4 text-success"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-lg-4 col-md-6 col-12 mb-4">
+                <div class="custom-block bg-white shadow-lg h-100">
+                  <div class="custom-block-content p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                      <div class="flex-grow-1">
+                        <h5 class="mb-2">Drone Detection</h5>
+                        <p class="mb-0">Identify drone signatures through acoustic analysis and pattern recognition.</p>
+                      </div>
+                      <span class="badge bg-acoustic rounded-pill ms-2">Security</span>
+                    </div>
+                    <div class="text-center mt-4">
+                      <i class="bi-eye display-4 text-success"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-lg-4 col-md-6 col-12 mb-4">
+                <div class="custom-block bg-white shadow-lg h-100">
+                  <div class="custom-block-content p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                      <div class="flex-grow-1">
+                        <h5 class="mb-2">Submarine Acoustics</h5>
+                        <p class="mb-0">Analyze underwater acoustic signals and distinguish from marine life.</p>
+                      </div>
+                      <span class="badge bg-acoustic rounded-pill ms-2">Sonar</span>
+                    </div>
+                    <div class="text-center mt-4">
+                      <i class="bi-water display-4 text-success"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Radar Signals Tab -->
+<div class="tab-pane fade" id="radar-tab-pane" role="tabpanel" aria-labelledby="radar-tab" tabindex="0">
+  <div class="row">
+    <div class="col-lg-4 col-md-6 col-12 mb-4">
+      <div class="custom-block bg-white shadow-lg h-100">
+        <div class="custom-block-content p-4">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="flex-grow-1">
+              <h5 class="mb-2">Radar Imaging</h5>
+              <p class="mb-0">Synthetic aperture radar (SAR) and high-resolution mapping.</p>
+            </div>
+          </div>
+          <div class="text-center mt-4">
+            <i class="bi-map display-4 text-danger"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4 col-md-6 col-12 mb-4">
+      <div class="custom-block bg-white shadow-lg h-100">
+        <div class="custom-block-content p-4">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="flex-grow-1">
+              <h5 class="mb-2">Object Detection</h5>
+              <p class="mb-0">Real-time tracking of aircraft, vehicles, and drones with radar signatures.</p>
+            </div>
+          </div>
+          <div class="text-center mt-4">
+            <i class="bi-broadcast-pin display-4 text-danger"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4 col-md-6 col-12 mb-4">
+      <div class="custom-block bg-white shadow-lg h-100">
+        <div class="custom-block-content p-4">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="flex-grow-1">
+              <h5 class="mb-2">Radar Signal Processing</h5>
+              <p class="mb-0">Noise reduction, Doppler filtering, and range-Doppler maps.</p>
+            </div>
+          </div>
+          <div class="text-center mt-4">
+            <i class="bi-hdd-network display-4 text-danger"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Analysis Modes Tab -->
+<div class="tab-pane fade" id="analysis-tab-pane" role="tabpanel" aria-labelledby="analysis-tab" tabindex="0">
+  <div class="row">
+    <div class="col-lg-4 col-md-6 col-12 mb-4">
+      <div class="custom-block bg-white shadow-lg h-100">
+        <div class="custom-block-content p-4">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="flex-grow-1">
+              <h5 class="mb-2">Time-Frequency Analysis</h5>
+              <p class="mb-0">Spectrograms, wavelets, and Fourier transform-based methods.</p>
+            </div>
+          </div>
+          <div class="text-center mt-4">
+            <i class="bi-graph-up display-4 text-info"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4 col-md-6 col-12 mb-4">
+      <div class="custom-block bg-white shadow-lg h-100">
+        <div class="custom-block-content p-4">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="flex-grow-1">
+              <h5 class="mb-2">Mode Comparison</h5>
+              <p class="mb-0">XOR-based overlay and sliding view for direct comparison of signals.</p>
+            </div>
+            
+          </div>
+          <div class="text-center mt-4">
+            <i class="bi-layers display-4 text-info"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4 col-md-6 col-12 mb-4">
+      <div class="custom-block bg-white shadow-lg h-100">
+        <div class="custom-block-content p-4">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="flex-grow-1">
+              <h5 class="mb-2">Polar Visualization</h5>
+              <p class="mb-0">Circular and radial signal representation for frequency domain insights.</p>
+            </div>
+          </div>
+          <div class="text-center mt-4">
+            <i class="bi-bullseye display-4 text-info"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+          
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+            <section class="timeline-section section-padding" id="section_3">
+                <div class="section-overlay"></div>
+                <div class="container">
+                    <div class="row">
+                        <div class="col-12 text-center">
+                            <h2 class="text-white mb-4">How It Works</h2>
+                        </div>
+
+                        <div class="col-lg-10 col-12 mx-auto">
+                            <div class="timeline-container">
+                                <ul class="vertical-scrollable-timeline" id="vertical-scrollable-timeline">
+                                    <div class="list-progress">
+                                        <div class="inner"></div>
+                                    </div>
+
+                                    <li>
+                                        <h4 class="text-white mb-3">Upload or Stream Your Signals</h4>
+                                        <p class="text-white">Import medical ECG/EEG data, acoustic recordings, or radar signals. Connect to real-time data streams for live analysis and monitoring.</p>
+                                        <div class="icon-holder">
+                                          <i class="bi-upload"></i>
+                                        </div>
+                                    </li>
+                                    
+                                    <li>
+                                        <h4 class="text-white mb-3">Choose Analysis Mode</h4>
+                                        <p class="text-white">Select from multiple visualization modes: sliding window, XOR comparison, polar graphs, or recurrence plots tailored to your specific analysis needs.</p>
+                                        <div class="icon-holder">
+                                          <i class="bi-sliders"></i>
+                                        </div>
+                                    </li>
+
+                                    <li>
+                                        <h4 class="text-white mb-3">AI-Powered Classification</h4>
+                                        <p class="text-white">Leverage machine learning and deep learning models for automatic abnormality detection in medical signals or pattern recognition in acoustic and radar data.</p>
+                                        <div class="icon-holder">
+                                          <i class="bi-robot"></i>
+                                        </div>
+                                    </li>
+
+                                    <li>
+                                        <h4 class="text-white mb-3">Export & Share Results</h4>
+                                        <p class="text-white">Generate comprehensive reports, export processed data, and share findings with colleagues or integrate with other analysis tools.</p>
+                                        <div class="icon-holder">
+                                          <i class="bi-share"></i>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="col-12 text-center mt-5">
+                            <p class="text-white">
+                                Ready to analyze your signals?
+                                <a href="#" class="btn custom-btn custom-border-btn ms-3">Get Started Now</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+        </main>
+
+        <footer class="site-footer section-padding">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-3 col-12 mb-4 pb-2">
+                        <a class="navbar-brand mb-2" href="index.html">
+                             <i class="bi-activity"></i>
+                             <span>DeepSignal</span>
+                        </a>
+                        <p class="text-muted">Advanced 1D Signal Analysis Platform</p>
+                    </div>
+
+            </div>
+        </footer>
+
+        <!-- JAVASCRIPT FILES -->
+        <script src="js/jquery.min.js"></script>
+        <script src="js/bootstrap.bundle.min.js"></script>
+        <script src="js/jquery.sticky.js"></script>
+        <script src="js/click-scroll.js"></script>
+        <script src="js/custom.js"></script>
+
+    </body>
+</html>

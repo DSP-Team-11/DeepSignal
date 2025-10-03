@@ -1,0 +1,41 @@
+.detection-hero-section {
+    background: linear-gradient(135deg, #fd7e14 0%, #ffc107 100%);
+    min-height: 40vh;
+    padding: 80px 0;
+    position: relative;
+}
+
+.detection-container {
+    border-left: 4px solid #fd7e14;
+}
+
+.upload-area {
+    border: 2px dashed #dee2e6;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+}
+
+.upload-area:hover {
+    border-color: #fd7e14;
+    background: #fff3cd;
+}
+
+.result-card {
+    transition: transform 0.3s ease;
+}
+
+.result-card:hover {
+    transform: translateY(-2px);
+}
+
+.analysis-results {
+    font-size: 0.9rem;
+}
+
+.modal-content {
+    border-radius: 10px;
+}
+
+.modal-header {
+    border-bottom: 2px solid #dee2e6;
+}
