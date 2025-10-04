@@ -72,6 +72,8 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'polar':
                 renderEEGPolarView(canvas, selectedChannels);
                 break;
+            case 'recurrence':
+                renderEEGRecurrenceView(canvas, selectedChannels)
         }
     }
 
@@ -115,6 +117,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         `;
+    }
+
+    function renderEEGRecurrenceView(canvas, channels) {
+    canvas.innerHTML = `
+        <div class="d-flex justify-content-center align-items-center h-100 flex-column">
+            <i class="bi-diagram-3 display-4 text-success mb-3"></i>
+            <h5>EEG Recurrence Plot</h5>
+            <p class="text-muted">Recurrence analysis of ${channels.length} channels</p>
+            <small class="text-muted">Brain activity pattern periodicity detection</small>
+            <div class="mt-3 p-3 bg-light rounded">
+                <small class="text-muted">Spectral coherence and cross-channel correlation analysis</small>
+            </div>
+        </div>
+    `;
     }
 
     function getSelectedChannels() {
