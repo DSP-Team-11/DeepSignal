@@ -108,7 +108,7 @@
                                         <i class="bi-activity display-4 text-primary mb-3"></i>
                                         <h5>ECG Analysis</h5>
                                         <p class="mb-3">Electrocardiogram signal analysis with multi-electrode display and cardiac abnormality detection.</p>
-                                        <button class="btn custom-btn select-signal-btn" data-type="ecg">Select</button>
+                                        <a href="ecg.html" class="btn custom-btn select-signal-btn">Select</a>
                                     </div>
                                 </div>
 
@@ -117,83 +117,7 @@
                                         <i class="bi-cpu display-4 text-success mb-3"></i>
                                         <h5>EEG Classification</h5>
                                         <p class="mb-3">Electroencephalogram analysis with AI-powered neurological condition detection.</p>
-                                        <button class="btn custom-btn select-signal-btn" data-type="eeg">Select</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Signal Viewer Section (Initially Hidden) -->
-                            <div id="signal-viewer" class="signal-viewer-container" style="display: none;">
-                                <div class="row">
-                                    <div class="col-lg-9 col-12">
-                                        <div class="d-flex justify-content-between align-items-center mb-3">
-                                            <h4 id="viewer-title">Signal Viewer</h4>
-                                            <button class="btn btn-outline-secondary btn-sm" id="back-to-selection">
-                                                <i class="bi-arrow-left"></i> Back to Selection
-                                            </button>
-                                        </div>
-                                        <div class="signal-canvas" id="signal-canvas">
-                                            <!-- Signal visualization will be rendered here -->
-                                            <div class="d-flex justify-content-center align-items-center h-100 text-muted">
-                                                <div class="text-center">
-                                                    <i class="bi-graph-up display-4 mb-3"></i>
-                                                    <p>Signal visualization will appear here</p>
-                                                    <small>Select channels and viewer options to begin</small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="col-lg-3 col-12">
-                                        <div class="control-panel">
-                                            <h5 class="mb-3">Viewer Controls</h5>
-                                            
-                                            <!-- Channel Selection -->
-                                            <div class="mb-4">
-                                                <h6>View Channels</h6>
-                                                <div class="channel-list" id="channel-list">
-                                                    <!-- Channels will be populated dynamically based on signal type -->
-                                                </div>
-                                            </div>
-                                            
-                                            <!-- Viewer Options -->
-                                            <div class="mb-4">
-                                                <h6>Viewer Options</h6>
-                                                <div class="viewer-option active" data-viewer="standard">
-                                                    <i class="bi-eye me-2"></i>Standard View
-                                                </div>
-                                                <div class="viewer-option" data-viewer="xor">
-                                                    <i class="bi-layers me-2"></i>XOR Viewer
-                                                </div>
-                                                <div class="viewer-option" data-viewer="polar">
-                                                    <i class="bi-bullseye me-2"></i>Polar View
-                                                </div>
-                                                <div class="viewer-option" id="recurrence-option" data-viewer="recurrence">
-                                                    <i class="bi-diagram-3 me-2"></i>Recurrence Viewer
-                                                </div>
-                                            </div>
-                                            
-                                            <!-- Analysis Controls -->
-                                            <div class="mb-3">
-                                                <h6>Analysis Controls</h6>
-                                                <div class="form-check mb-2">
-                                                    <input class="form-check-input" type="checkbox" id="real-time-toggle">
-                                                    <label class="form-check-label" for="real-time-toggle">
-                                                        Real-time Processing
-                                                    </label>
-                                                </div>
-                                                <div class="form-check mb-2">
-                                                    <input class="form-check-input" type="checkbox" id="ai-analysis">
-                                                    <label class="form-check-label" for="ai-analysis">
-                                                        AI Abnormality Detection
-                                                    </label>
-                                                </div>
-                                            </div>
-                                            
-                                            <button class="btn custom-btn w-100 mt-3" id="analyze-btn">
-                                                <i class="bi-play-circle me-2"></i>Start Analysis
-                                            </button>
-                                        </div>
+                                        <a href="eeg.html" class="btn custom-btn select-signal-btn">Select</a>
                                     </div>
                                 </div>
                             </div>
@@ -264,7 +188,7 @@
         <script src="js/bootstrap.bundle.min.js"></script>
         <script src="js/jquery.sticky.js"></script>
         <script src="js/custom.js"></script>
-        <script src="js/medical-signals.js"></script>
+        <!-- No medical-signals.js needed anymore since we removed the JavaScript functionality -->
 
     </body>
 </html>

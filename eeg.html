@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="EEG Signal Analysis - Advanced neurological signal classification">
+        <meta name="author" content="">
+
+        <title>EEG Analysis - DeepSignal</title>
+
+        <!-- CSS FILES -->        
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Open+Sans&display=swap" rel="stylesheet">
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/bootstrap-icons.css" rel="stylesheet">
+        <link href="css/templatemo-topic-listing.css" rel="stylesheet">
+        <link href="css/medical-signals.css" rel="stylesheet">
+    </head>
+    
+    <body id="top">
+
+        <main>
+
+            <nav class="navbar navbar-expand-lg">
+                <div class="container">
+                    <a class="navbar-brand" href="index.html">
+                        <i class="bi-activity"></i>
+                        <span>DeepSignal</span>
+                    </a>
+
+                    <div class="d-lg-none ms-auto me-4">
+                        <a href="#top" class="navbar-icon bi-person smoothscroll"></a>
+                    </div>
+    
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+    
+                    <div class="collapse navbar-collapse" id="navbarNav">
+                        <ul class="navbar-nav ms-lg-5 me-lg-auto">
+                            <li class="nav-item">
+                                <a class="nav-link click-scroll" href="index.html#section_1">Home</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link click-scroll" href="index.html#section_2">Categories</a>
+                            </li>
+    
+                            <li class="nav-item">
+                                <a class="nav-link click-scroll" href="index.html#section_3">Features</a>
+                            </li>
+
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="navbarLightDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">Applications</a>
+
+                                <ul class="dropdown-menu dropdown-menu-light" aria-labelledby="navbarLightDropdownMenuLink">
+                                    <li><a class="dropdown-item" href="medical-signals.html">Medical Signals</a></li>
+                                    <li><a class="dropdown-item active" href="eeg.html">EEG Analysis</a></li>
+                                    <li><a class="dropdown-item" href="acoustic-signals.html">Acoustic Signals</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                        <div class="d-none d-lg-block">
+                            <a href="#top" class="navbar-icon bi-person smoothscroll"></a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+            
+<header class="site-header d-flex flex-column justify-content-center align-items-center text-center">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-12">
+
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb justify-content-center">
+                        <li class="breadcrumb-item"><a href="index.html">Homepage</a></li>
+                        <li class="breadcrumb-item"><a href="medical-signals.html">Medical Signals</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">EEG Analysis</li>
+                    </ol>
+                </nav>
+
+                <h2 class="text-white display-4 fw-bold">EEG Signal<br>Classification Studio</h2>
+
+                <p class="text-white mt-3 fs-5">
+                    Advanced electroencephalogram analysis with AI-powered neurological 
+                    condition detection and multi-view visualization.
+                </p>
+
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+            <section class="topics-detail-section section-padding" id="analysis-tools">
+                <div class="container">
+                    <div class="row">
+
+                    
+                            
+                            <!-- Signal Viewer Section -->
+                            <div id="signal-viewer" class="signal-viewer-container">
+                                <div class="row">
+                                    <div class="col-lg-9 col-12">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h4 id="viewer-title">EEG Signal Viewer</h4>
+                                            <button class="btn btn-outline-secondary btn-sm" id="back-to-selection">
+                                                <i class="bi-arrow-left"></i> Back to Medical Signals
+                                            </button>
+                                        </div>
+                                        <div class="signal-canvas" id="signal-canvas">
+                                            <div class="d-flex justify-content-center align-items-center h-100 text-muted">
+                                                <div class="text-center">
+                                                    <i class="bi-cpu display-4 mb-3"></i>
+                                                    <p>EEG signal visualization will appear here</p>
+                                                    <small>Select channels and viewer options to begin</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-lg-3 col-12">
+                                        <div class="control-panel">
+                                            <h5 class="mb-3">EEG Controls</h5>
+                                            <!-- Add this in the control panel section, above the Analyze button -->
+                                    <div class="mb-4">
+                                        <h6>Signal Data</h6>
+                                        <div class="upload-container">
+                                            <input type="file" id="signal-upload" accept=".edf,.csv,.txt,.mat,.dat,.npy" hidden>
+                                            <button class="btn btn-outline-primary w-100 mb-2" id="upload-btn">
+                                                <i class="bi-cloud-upload me-2"></i>Upload Signal File
+                                            </button>
+                                            <div class="upload-info small text-muted">
+                                                Supported:CSV, TXT, MAT, DAT, NPY
+                                            </div>
+                                            <div id="upload-status" class="mt-2 small"></div>
+                                        </div>
+                                    </div>
+                                            <!-- Channel Selection -->
+                                            <div class="mb-4">
+                                                <h6>EEG Channels</h6>
+                                                <div class="channel-list" id="channel-list">
+                                                    <!-- EEG channels will be populated dynamically -->
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Viewer Options -->
+                                            <div class="mb-4">
+                                                <h6>Viewer Options</h6>
+                                                <div class="viewer-option active" data-viewer="standard">
+                                                    <i class="bi-eye me-2"></i>Standard View
+                                                </div>
+                                                <div class="viewer-option" data-viewer="xor">
+                                                    <i class="bi-layers me-2"></i>XOR Comparison
+                                                </div>
+                                                <div class="viewer-option" data-viewer="polar">
+                                                    <i class="bi-bullseye me-2"></i>Polar View
+                                                </div>
+                                                <div class="viewer-option" data-viewer="recurrence">
+                                                    <i class="bi-diagram-3 me-2"></i>Recurrence Plot
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- EEG Specific Controls -->
+                                            <div class="mb-3">
+                                                <h6>EEG Analysis</h6>
+                                                
+                                                <div class="form-check mb-2">
+                                                    <input class="form-check-input" type="checkbox" id="real-time-toggle" checked>
+                                                    <label class="form-check-label" for="real-time-toggle">
+                                                        Real-time Monitoring
+                                                    </label>
+                                                </div>
+                                                <div class="form-check mb-2">
+                                                    <input class="form-check-input" type="checkbox" id="abnormality-detection">
+                                                    <label class="form-check-label" for="heart-rate">
+                                                        Abnormality Detection
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            </div>
+                                            
+                                            <button class="btn custom-btn w-100 mt-3" id="analyze-btn">
+                                                <i class="bi-play-circle me-2"></i>Start EEG Analysis
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- EEG Specific Info -->
+                           <div class="row mt-5">
+    <div class="col-12">
+        <h4>EEG Analysis Features</h4>
+        <div class="row">
+            <div class="col-md-4 col-12 mb-4">
+                <div class="custom-block-icon text-center">
+                    <h5 class="mt-3">AI-Powered Diagnosis</h5>
+                    <div class="badges-container mb-3">
+  <span class="badge bg-danger me-1 mb-1">AD</span>
+  <span class="badge bg-warning text-dark me-1 mb-1">PD</span>
+  <span class="badge bg-info me-1 mb-1">FTD</span>
+  <span class="badge bg-success me-1 mb-1">MS</span>
+</div>
+
+                    <p>Deep learning models for accurate detection of Alzheimer's Disease, Parkinson's, Frontotemporal Dementia, and Multiple Sclerosis</p>
+                </div>
+            </div>
+
+            <div class="col-md-4 col-12 mb-4">
+                <div class="custom-block-icon text-center">
+                    <h5 class="mt-3">Multi-View Visualization</h5>
+                    <div class="badges-container mb-3">
+                        <span class="badge bg-primary me-1 mb-1">Standard</span>
+                        <span class="badge bg-warning me-1 mb-1">XOR</span>
+                        <span class="badge bg-info me-1 mb-1">Polar</span>
+                        <span class="badge bg-secondary me-1 mb-1">Recurrence</span>
+                    </div>
+                    <p>Comprehensive signal display with multiple visualization modes for detailed neurological pattern analysis and comparison</p>
+                </div>
+            </div>
+
+            <div class="col-md-4 col-12 mb-4">
+                <div class="custom-block-icon text-center">
+                    <h5 class="mt-3">Clinical Analytics</h5>
+                    <div class="badges-container mb-3">
+                        <span class="badge bg-success me-1 mb-1">19-Channel</span>
+                        <span class="badge bg-secondary me-1 mb-1">10-20 Montage</span>
+                        <span class="badge bg-dark me-1 mb-1">Real-time</span>
+                    </div>
+                    <p>Professional-grade EEG analysis with full 19-channel support and real-time processing for immediate clinical insights</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+          <footer class="site-footer section-padding">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-3 col-12 mb-4 pb-2">
+                        <a class="navbar-brand mb-2" href="index.html">
+                             <i class="bi-activity"></i>
+                             <span>DeepSignal</span>
+                        </a>
+                        <p class="text-muted">Advanced 1D Signal Analysis Platform</p>
+                    </div>
+
+            </div>
+        </footer>
+
+        <!-- JAVASCRIPT FILES -->
+        <script src="js/jquery.min.js"></script>
+        <script src="js/bootstrap.bundle.min.js"></script>
+        <script src="js/jquery.sticky.js"></script>
+        <script src="js/custom.js"></script>
+        <script src="js/eeg.js"></script>
+
+    </body>
+</html>

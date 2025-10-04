@@ -135,9 +135,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <small class="text-muted">Real-time signal visualization</small>
             </div>
         `;
-        
-        // Here you would integrate with actual signal visualization library
-        // For now, we show a placeholder
     }
 
     function renderXORView(canvas, channels) {
@@ -149,8 +146,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <small class="text-muted">Exclusive OR analysis active</small>
             </div>
         `;
-        
-        // XOR visualization logic would go here
     }
 
     function renderPolarView(canvas, channels) {
@@ -162,8 +157,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <small class="text-muted">Circular coordinate system visualization</small>
             </div>
         `;
-        
-        // Polar coordinate visualization logic would go here
     }
 
     function renderRecurrenceView(canvas, channels) {
@@ -175,8 +168,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <small class="text-muted">Pattern repetition visualization</small>
             </div>
         `;
-        
-        // Recurrence plot visualization logic would go here
     }
 
     function getSelectedChannels() {

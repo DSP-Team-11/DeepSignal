@@ -138,5 +138,60 @@
     .channel-list {
         max-height: 150px;
     }
+
+    /* Upload Button Styles */
+.upload-container {
+    text-align: center;
+    padding: 15px;
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.upload-container:hover {
+    border-color: #80d0c7;
+    background: #e3f2fd;
+}
+
+.upload-container.dragover {
+    border-color: #80d0c7;
+    background: #e3f2fd;
+    transform: scale(1.02);
+}
+
+#upload-btn {
+    transition: all 0.3s ease;
+}
+
+#upload-btn:hover {
+    transform: translateY(-2px);
+}
+
+.upload-info {
+    font-size: 0.75rem;
+}
+
+#upload-status {
+    min-height: 20px;
+}
+
+.file-info {
+    background: #e8f5e8;
+    border: 1px solid #80d0c7;
+    border-radius: 4px;
+    padding: 8px;
+    margin-top: 8px;
+    font-size: 0.8rem;
+}
+
+.progress-bar {
+    height: 4px;
+    background: #80d0c7;
+    width: 0%;
+    transition: width 0.3s ease;
+    border-radius: 2px;
+    margin-top: 5px;
+}
 }
 
