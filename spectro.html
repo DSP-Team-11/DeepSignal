@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<title>Spectrogram</title>
+
+	
+
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+	<!-- For more information, please visit http://iopscience.iop.org/article/10.1088/0031-9120/51/6/065025 -->
+	<!-- A project between Edward Ball at Academo (UK) and Prof. Michael J. Ruiz at UNC Asheville (USA), based on work by Boris Smus, Google (USA). -->
+
+   
+	<body style="background-color: #e0f2f0;">
+
+		<div id="spectrogram"></div>
+
+		<script src="jquery.min.js"></script>
+		<script type='text/javascript' src='spectrogram-v12.js'></script>
+		<script>
+		var spectrogram = new Spectrogram({
+			font:"14px Arial",
+			fftsize: Math.pow(2,11),
+			scrollDirection: 1,
+			backgroundColor: "#48a",
+			audioFiles: [{
+				title: "Baby",
+				value: "/sounds/baby.mp3",
+				selected: true
+			},{
+				title: "Baby 'Ok'",
+				value: "/sounds/baby_OK.mp3",
+			},{
+	 			title: "Banging",
+				value: "/sounds/banging.mp3",
+			},{
+				title: "Bee",
+				value: "/sounds/bee.mp3",
+			},{
+				title: "Bell",
+				value: "/sounds/bell.mp3",
+			},{
+				title: "Birds",
+				value: "/sounds/birds.mp3",
+			},{
+				title: "Cat",
+				value: "/sounds/cat.mp3",
+			},{
+				title: "Chimes",
+				value: "/sounds/chimes.mp3",
+			},{
+				title: "Complex Tone",
+				value: "/sounds/complex_tone.mp3",
+			},{
+				title: "Dogs",
+				value: "/sounds/dogs.mp3",
+			},{
+				title: "Exotic Bird",
+				value: "/sounds/exotic_bird.mp3",
+			},{
+				title: "Flute",
+				value: "/sounds/flute.mp3",
+			},{
+				title: "Golf",
+				value: "/sounds/golf.mp3",
+			},{
+				title: "Hey",
+				value: "/sounds/hey.mp3",
+			},{
+				title: "Jet",
+				value: "/sounds/jet.mp3",
+			},{
+				title: "Lion",
+				value: "/sounds/lion.mp3",
+			},{
+				title: "Major Scale",
+				value: "/sounds/major_scale.mp3",
+			},{
+				title: "Miter Saw",
+				value: "/sounds/miter_saw.mp3",
+			},{
+				title: "Orchestra",
+				value: "/sounds/orchestra.mp3",
+			},{
+				title: "Saxophone",
+				value: "/sounds/saxaphone.mp3",
+			},{
+				title: "Scream",
+				value: "/sounds/scream.mp3",
+			},{
+				title: "Siamangs",
+				value: "/sounds/siamangs.mp3",
+			},{
+				title: "Sine Wave",
+				value: "/sounds/sine_wave.mp3",
+			},{
+				title: "Siren (One)",
+				value: "/sounds/siren_one.mp3",
+			},{
+				title: "Sirens",
+				value: "/sounds/sirens.mp3",
+			},{
+				title: "Soprano",
+				value: "/sounds/soprano.mp3",
+			},{
+				title: "Spectrogram",
+				value: "/sounds/spectrogram.mp3",
+			},{
+				title: "Sweeping Sine",
+				value: "/sounds/sweep.mp3",
+			},{
+				title: "Theremin",
+				value: "/sounds/theremin.mp3",
+			},{
+				title: "Thunder",
+				value: "/sounds/thunder.mp3",
+			},{
+				title: "Train",
+				value: "/sounds/train.mp3",
+			},{
+				title: "Vibrato Sound",
+				value: "/sounds/vibrato.mp3",
+			},{
+				title: "Violin",
+				value: "/sounds/violin.mp3",
+			},{
+				title: "Vowels",
+				value: "/sounds/vowels.mp3",
+			},{
+	 			title: "Waterfall",
+				value: "/sounds/waterfall.mp3",
+			}]
+		});
+		</script>
+
+	</body>
+</html>
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Spectrogram</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+	<!-- For more information, please visit http://iopscience.iop.org/article/10.1088/0031-9120/51/6/065025 -->
+	<!-- A project between Edward Ball at Academo (UK) and Prof. Michael J. Ruiz at UNC Asheville (USA), based on work by Boris Smus, Google (USA). -->
+
+	<body style="background-color: #80d0c7;">
+
+		<div id="spectrogram"></div>
+
+		<script src="js/jquery.min.js"></script>
+		<script type='text/javascript' src='js/spectro.js'></script>
+		<script>
+		var spectrogram = new Spectrogram({
+			font:"14px Arial",
+			fftsize: Math.pow(2,11),
+			scrollDirection: 1,
+			backgroundColor: "#48a",
+			audioFiles: [{
+				title: "Baby",
+				value: "sounds/baby.mp3",
+				selected: true
+			},{
+				title: "Baby 'Ok'",
+				value: "sounds/baby_OK.mp3",
+			},{
+	 			title: "Banging",
+				value: "sounds/banging.mp3",
+			},{
+				title: "Bee",
+				value: "sounds/bee.mp3",
+			},{
+				title: "Bell",
+				value: "sounds/bell.mp3",
+			},{
+				title: "Birds",
+				value: "sounds/birds.mp3",
+			},{
+				title: "Cat",
+				value: "sounds/cat.mp3",
+			},{
+				title: "Chimes",
+				value: "sounds/chimes.mp3",
+			},{
+				title: "Complex Tone",
+				value: "sounds/complex_tone.mp3",
+			},{
+				title: "Dogs",
+				value: "sounds/dogs.mp3",
+			},{
+				title: "Exotic Bird",
+				value: "sounds/exotic_bird.mp3",
+			},{
+				title: "Flute",
+				value: "sounds/flute.mp3",
+			},{
+				title: "Golf",
+				value: "sounds/golf.mp3",
+			},{
+				title: "Hey",
+				value: "sounds/hey.mp3",
+			},{
+				title: "Jet",
+				value: "sounds/jet.mp3",
+			},{
+				title: "Lion",
+				value: "sounds/lion.mp3",
+			},{
+				title: "Major Scale",
+				value: "sounds/major_scale.mp3",
+			},{
+				title: "Miter Saw",
+				value: "sounds/miter_saw.mp3",
+			},{
+				title: "Orchestra",
+				value: "sounds/orchestra.mp3",
+			},{
+				title: "Saxophone",
+				value: "sounds/saxaphone.mp3",
+			},{
+				title: "Scream",
+				value: "sounds/scream.mp3",
+			},{
+				title: "Siamangs",
+				value: "sounds/siamangs.mp3",
+			},{
+				title: "Sine Wave",
+				value: "sounds/sine_wave.mp3",
+			},{
+				title: "Siren (One)",
+				value: "sounds/siren_one.mp3",
+			},{
+				title: "Sirens",
+				value: "sounds/sirens.mp3",
+			},{
+				title: "Soprano",
+				value: "sounds/soprano.mp3",
+			},{
+				title: "Spectrogram",
+				value: "sounds/spectrogram.mp3",
+			},{
+				title: "Sweeping Sine",
+				value: "sounds/sweep.mp3",
+			},{
+				title: "Theremin",
+				value: "sounds/theremin.mp3",
+			},{
+				title: "Thunder",
+				value: "sounds/thunder.mp3",
+			},{
+				title: "Train",
+				value: "sounds/train.mp3",
+			},{
+				title: "Vibrato Sound",
+				value: "sounds/vibrato.mp3",
+			},{
+				title: "Violin",
+				value: "sounds/violin.mp3",
+			},{
+				title: "Vowels",
+				value: "sounds/vowels.mp3",
+			},{
+	 			title: "Waterfall",
+				value: "sounds/waterfall.mp3",
+			}]
+		});
+		</script>
+
+	</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
