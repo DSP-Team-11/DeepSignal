@@ -8,15 +8,42 @@
 
         <title>Doppler Analysis - DeepSignal</title>
 
-        <!-- CSS FILES -->        
+        <!-- CSS FILES -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Open+Sans&display=swap" rel="stylesheet">
         <link href="css/bootstrap.min.css" rel="stylesheet">
         <link href="css/bootstrap-icons.css" rel="stylesheet">
         <link href="css/templatemo-topic-listing.css" rel="stylesheet">
+        <link href="css/doppler-detection.css" rel="stylesheet">
+        <link href="css/doppler-simulation.css" rel="stylesheet">
+
+        <style>
+            .upload-area {
+                border: 2px dashed #dee2e6;
+                transition: all 0.3s ease;
+            }
+            .upload-area:hover {
+                border-color: #0d6efd;
+                background-color: #f8f9fa;
+            }
+            .cursor-pointer {
+                cursor: pointer;
+            }
+            .spinner {
+                animation: spin 1s linear infinite;
+            }
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+            .progress {
+                height: 8px;
+                margin-top: 10px;
+            }
+        </style>
     </head>
-    
+
     <body id="top">
 
         <main>
@@ -30,21 +57,21 @@
                     <div class="d-lg-none ms-auto me-4">
                         <a href="#top" class="navbar-icon bi-person smoothscroll"></a>
                     </div>
-    
+
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                         <span class="navbar-toggler-icon"></span>
                     </button>
-    
+
                     <div class="collapse navbar-collapse" id="navbarNav">
                         <ul class="navbar-nav ms-lg-5 me-lg-auto">
                             <li class="nav-item">
-                                <a class="nav-link click-scroll" href="#section_1">Home</a>
+                                <a class="nav-link click-scroll" href="index.html">Home</a>
                             </li>
 
                             <li class="nav-item">
                                 <a class="nav-link click-scroll" href="#section_2">Categories</a>
                             </li>
-    
+
                             <li class="nav-item">
                                 <a class="nav-link click-scroll" href="#section_3">Features</a>
                             </li>
@@ -59,39 +86,34 @@
                             </li>
                         </ul>
 
-                        <div class="d-none d-lg-block">
-                            <a href="#top" class="navbar-icon bi-person smoothscroll"></a>
-                        </div>
                     </div>
                 </div>
             </nav>
-            
+
 
             <!-- Hero Section -->
-
             <header class="site-header d-flex flex-column justify-content-center align-items-center text-center">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-8 col-12">
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-8 col-12">
 
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb justify-content-center">
-                        <li class="breadcrumb-item"><a href="index.html">Homepage</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">Acoustic Signals</li>
-                    </ol>
-                </nav>
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb justify-content-center">
+                                    <li class="breadcrumb-item"><a href="index.html">Homepage</a></li>
+                                    <li class="breadcrumb-item active" aria-current="page">Acoustic Signals</li>
+                                </ol>
+                            </nav>
 
-                <h2 class="text-white display-4 fw-bold">Doppler Effect Analysis</h2>
+                            <h2 class="text-white display-4 fw-bold">Doppler Effect Analysis</h2>
 
-                <p class="text-white mt-3 fs-5">
-                    Simulate, detect, and analyze Doppler effects in acoustic signals
-                </p>
+                            <p class="text-white mt-3 fs-5">
+                                Simulate, detect, and analyze Doppler effects in acoustic signals
+                            </p>
 
-            </div>
-            
-        </div>
-    </div>
-</header>
+                        </div>
+                    </div>
+                </div>
+            </header>
 
             <!-- Tab Navigation -->
             <section class="section-padding">
@@ -119,7 +141,7 @@
                                             <div class="custom-block bg-white shadow-lg">
                                                 <div class="custom-block-content p-4">
                                                     <h4 class="mb-4">Doppler Effect Simulator</h4>
-                                                    
+
                                                     <div class="row mb-4">
                                                         <div class="col-md-6">
                                                             <div class="mb-3">
@@ -141,49 +163,43 @@
                                                         <div class="col-md-6">
                                                             <div class="mb-3">
                                                                 <label class="form-label">Sound Source Type</label>
-                                                                <select class="form-select" id="soundSource">
-                                                                    <option value="sine">Sine Wave</option>
-                                                                    <option value="square">Square Wave</option>
-                                                                    <option value="sawtooth">Sawtooth Wave</option>
+                                                                <select class="form-select" id="signal-type">
+                                                                    <option value="1">Realistic car engine</option>
+                                                                    <option value="3">Square wave</option>
+                                                                    <option value="4">Ambulance siren</option>
+                                                                    <option value="5">Sawtooth wave</option>
                                                                 </select>
                                                             </div>
                                                         </div>
                                                         <div class="col-md-6">
                                                             <div class="mb-3">
-                                                                <label class="form-label">Duration (seconds)</label>
-                                                                <input type="number" class="form-control" id="duration" value="3" min="1" max="10" step="0.5">
+                                                                <label class="form-label">Lateral Distance</label>
+                                                                <input type="number" class="form-control" id="lateralDistance" value="3" min="1" max="10" step="0.5">
+                                                                <div class="form-text">Distance from source to observer</div>
                                                             </div>
                                                         </div>
                                                     </div>
 
                                                     <div class="text-center mb-4">
-                                                        <button class="btn custom-btn me-3" onclick="generateDopplerSound()">
+                                                        <button class="btn custom-btn me-3" type="button" onclick="generateDopplerSound()">
                                                             <i class="bi-play-circle me-2"></i>Generate Sound
                                                         </button>
-                                                        <button id="downloadBtn" class="btn custom-border-btn" disabled onclick="downloadSound()">
+                                                        <button id="downloadBtn" class="btn custom-border-btn me-3" onclick="downloadSound()">
                                                             <i class="bi-download me-2"></i>Download Audio
+                                                        </button>
+                                                        <button class="btn custom-border-btn" onclick="window.location.href='/spectro.html'">
+                                                            <i class="bi-graph-up me-2"></i>View Spectrogram
                                                         </button>
                                                     </div>
 
-                                                    <!-- Visualization -->
-                                                    <div class="row mt-4">
-                                                        <div class="col-md-6">
-                                                            <div class="text-center">
-                                                                <h6>Original Frequency</h6>
-                                                                <canvas id="originalWaveform" width="300" height="120"></canvas>
-                                                                <div class="mt-2">
-                                                                    <span class="badge bg-secondary" id="originalFreq">440 Hz</span>
-                                                                </div>
-                                                            </div>
+                                                    <!-- Progress Bar -->
+                                                    <div id="progressSection" class="d-none">
+                                                        <div class="progress">
+                                                            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated"
+                                                                 role="progressbar" style="width: 0%"></div>
                                                         </div>
-                                                        <div class="col-md-6">
-                                                            <div class="text-center">
-                                                                <h6>Doppler-Shifted</h6>
-                                                                <canvas id="dopplerWaveform" width="300" height="120"></canvas>
-                                                                <div class="mt-2">
-                                                                    <span class="badge bg-primary" id="shiftedFreq">0 Hz</span>
-                                                                </div>
-                                                            </div>
+                                                        <div class="text-center mt-2">
+                                                            <small id="progressText">Generating audio...</small>
                                                         </div>
                                                     </div>
 
@@ -226,7 +242,7 @@
                                             <div class="custom-block bg-white shadow-lg">
                                                 <div class="custom-block-content p-4">
                                                     <h4 class="mb-4">Doppler Effect Detection</h4>
-                                                    
+
                                                     <!-- File Upload -->
                                                     <div class="mb-4">
                                                         <div class="upload-area border-dashed rounded p-4 text-center mb-3">
@@ -252,42 +268,73 @@
                                                             <button id="detectBtn" class="btn custom-btn me-3" disabled onclick="detectDoppler()">
                                                                 <i class="bi-search me-2"></i>Detect Doppler
                                                             </button>
-                                                            <button id="spectrogramBtn" class="btn custom-border-btn" disabled onclick="showSpectrogram()">
+                                                            <button class="btn custom-border-btn" onclick="window.location.href='/spectro.html'">
                                                                 <i class="bi-graph-up me-2"></i>View Spectrogram
                                                             </button>
                                                         </div>
                                                     </div>
 
                                                     <!-- Results Section -->
-                                                    <div id="resultsSection" class="d-none">
-                                                        <h5 class="mb-3">Detection Results</h5>
-                                                        
-                                                        <div class="row mb-4">
-                                                            <div class="col-md-6">
-                                                                <div class="p-3 bg-light rounded h-100">
-                                                                    <h6>Doppler Detection</h6>
-                                                                    <div id="detectionResult">
-                                                                        <!-- Results will be populated here -->
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-md-6">
-                                                                <div class="p-3 bg-light rounded h-100">
-                                                                    <h6>Frequency & Velocity</h6>
-                                                                    <button class="btn btn-outline-primary btn-sm w-100 mb-2" onclick="showFrequencyAnalysis()">
-                                                                        View Frequency & Velocity
-                                                                    </button>
-                                                                    <div id="frequencyAnalysis" class="small">
-                                                                        <!-- Analysis results -->
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
+                                                       <!-- In the detection tab, replace the results section with this: -->
+                                                            <div id="resultsSection" class="d-none">
+                                                                <h5 class="mb-3">Detection Results</h5>
 
-                                                        <div class="p-3 bg-light rounded">
-                                                            <h6>Signal Analysis</h6>
-                                                            <canvas id="analysisCanvas" width="100%" height="200"></canvas>
-                                                        </div>
+                                                                <div class="row mb-4">
+                                                                    <div class="col-md-6">
+                                                                        <div class="p-3 detection-results rounded h-100">
+                                                                            <h6>Doppler Detection Analysis</h6>
+                                                                            <div id="detectionResult">
+                                                                                <!-- Results will be populated here -->
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <div class="p-3 bg-light rounded h-100">
+                                                                            <h6>Frequency & Velocity Analysis</h6>
+                                                                            <div id="frequencyAnalysis" class="small mb-3">
+                                                                                <!-- Analysis results -->
+                                                                            </div>
+                                                                            <button class="btn btn-outline-primary btn-sm w-100" onclick="showDetailedAnalysis()">
+                                                                                <i class="bi-graph-up me-2"></i>View Detailed Analysis
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div class="analysis-chart">
+                                                                    <h6>Frequency vs Time Analysis</h6>
+                                                                    <canvas id="analysisCanvas" width="100%" height="200"></canvas>
+                                                                </div>
+
+                                                                <!-- Additional Analysis Info -->
+                                                                <div class="row mt-3">
+                                                                    <div class="col-md-4">
+                                                                        <div class="card text-center">
+                                                                            <div class="card-body">
+                                                                                <h6 class="card-title">Approach Frequency</h6>
+                                                                                <h4 class="text-danger" id="approachFreq">-- Hz</h4>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-4">
+                                                                        <div class="card text-center">
+                                                                            <div class="card-body">
+                                                                                <h6 class="card-title">Recede Frequency</h6>
+                                                                                <h4 class="text-primary" id="recedeFreq">-- Hz</h4>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-4">
+                                                                        <div class="card text-center">
+                                                                            <div class="card-body">
+                                                                                <h6 class="card-title">Estimated Speed</h6>
+                                                                                <h4 class="text-success" id="estimatedSpeed">-- km/h</h4>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        
                                                     </div>
                                                 </div>
                                             </div>
@@ -333,7 +380,7 @@
 
         </main>
 
-      <footer class="site-footer section-padding">
+        <footer class="site-footer section-padding">
             <div class="container">
                 <div class="row">
                     <div class="col-lg-3 col-12 mb-4 pb-2">
@@ -343,16 +390,19 @@
                         </a>
                         <p class="text-muted">Advanced 1D Signal Analysis Platform</p>
                     </div>
-
+                </div>
             </div>
         </footer>
+
         <!-- JAVASCRIPT FILES -->
-        <script src="js/doppler-analysis.js"></script>
         <script src="js/jquery.min.js"></script>
         <script src="js/bootstrap.bundle.min.js"></script>
         <script src="js/jquery.sticky.js"></script>
         <script src="js/click-scroll.js"></script>
         <script src="js/custom.js"></script>
+        <script src="js/spectro.js"></script>
+        <script src="js/doppler-analysis.js"></script>
 
+       
     </body>
 </html>

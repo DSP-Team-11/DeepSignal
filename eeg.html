@@ -16,6 +16,183 @@
         <link href="css/bootstrap-icons.css" rel="stylesheet">
         <link href="css/templatemo-topic-listing.css" rel="stylesheet">
         <link href="css/medical-signals.css" rel="stylesheet">
+
+        
+        <style>
+            /* Signal Viewer Styles */
+            .signal-viewer-container {
+                background: #f8f9fa;
+                border-radius: 10px;
+                padding: 20px;
+                margin-bottom: 30px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            }
+            
+            .signal-canvas {
+                background: white;
+                border: 1px solid #dee2e6;
+                border-radius: 8px;
+                height: 400px;
+                position: relative;
+                overflow: hidden;
+            }
+            
+            #signal-display {
+                width: 100%;
+                height: 100%;
+                position: relative;
+            }
+            
+            .signal-grid {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+            }
+            
+            .signal-line {
+                stroke-width: 1.5;
+                fill: none;
+            }
+            
+            .signal-label {
+                position: absolute;
+                background: rgba(0,0,0,0.7);
+                color: white;
+                padding: 2px 6px;
+                border-radius: 3px;
+                font-size: 10px;
+                pointer-events: none;
+            }
+            
+            .control-panel {
+                background: white;
+                border-radius: 8px;
+                padding: 15px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            
+            .viewer-controls {
+                background: white;
+                border-radius: 8px;
+                padding: 15px;
+                margin-top: 15px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            
+            .control-group {
+                margin-bottom: 15px;
+            }
+            
+            .control-group label {
+                font-size: 0.85rem;
+                font-weight: 500;
+                margin-bottom: 5px;
+                display: block;
+            }
+            
+            .slider-control {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            
+            .slider-control input {
+                flex: 1;
+            }
+            
+            .slider-value {
+                min-width: 40px;
+                text-align: center;
+                font-size: 0.8rem;
+                color: #6c757d;
+            }
+            
+            .btn-group-control {
+                display: flex;
+                gap: 5px;
+            }
+            
+            .btn-group-control .btn {
+                flex: 1;
+                font-size: 0.8rem;
+                padding: 5px 8px;
+            }
+            
+            .channel-list {
+                max-height: 200px;
+                overflow-y: auto;
+                border: 1px solid #dee2e6;
+                border-radius: 5px;
+                padding: 10px;
+            }
+            
+            .channel-item {
+                display: flex;
+                align-items: center;
+                margin-bottom: 8px;
+            }
+            
+            .channel-item:last-child {
+                margin-bottom: 0;
+            }
+            
+            .channel-color {
+                width: 15px;
+                height: 15px;
+                border-radius: 3px;
+                margin-right: 8px;
+            }
+            
+            .viewer-option {
+                padding: 8px 12px;
+                border-radius: 5px;
+                margin-bottom: 5px;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+            
+            .viewer-option:hover {
+                background: #e9ecef;
+            }
+            
+            .viewer-option.active {
+                background: #80d0c7;
+                color: white;
+            }
+            
+            .upload-container {
+                border: 2px dashed #dee2e6;
+                border-radius: 8px;
+                padding: 15px;
+                text-align: center;
+                margin-bottom: 15px;
+            }
+            
+            .badges-container {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .time-display {
+                position: absolute;
+                bottom: 10px;
+                left: 10px;
+                background: rgba(0,0,0,0.7);
+                color: white;
+                padding: 5px 10px;
+                border-radius: 4px;
+                font-size: 0.8rem;
+                pointer-events: none;
+            }
+            
+            .modal-progress {
+                height: 25px;
+            }
+        </style>
     </head>
     
     <body id="top">
@@ -61,10 +238,6 @@
                                 </ul>
                             </li>
                         </ul>
-
-                        <div class="d-none d-lg-block">
-                            <a href="#top" class="navbar-icon bi-person smoothscroll"></a>
-                        </div>
                     </div>
                 </div>
             </nav>
@@ -108,16 +281,61 @@
                                     <div class="col-lg-9 col-12">
                                         <div class="d-flex justify-content-between align-items-center mb-3">
                                             <h4 id="viewer-title">EEG Signal Viewer</h4>
-                                            <button class="btn btn-outline-secondary btn-sm" id="back-to-selection">
-                                                <i class="bi-arrow-left"></i> Back to Medical Signals
-                                            </button>
+                                            
                                         </div>
                                         <div class="signal-canvas" id="signal-canvas">
-                                            <div class="d-flex justify-content-center align-items-center h-100 text-muted">
-                                                <div class="text-center">
-                                                    <i class="bi-cpu display-4 mb-3"></i>
-                                                    <p>EEG signal visualization will appear here</p>
-                                                    <small>Select channels and viewer options to begin</small>
+                                            <div id="signal-display">
+                                                <!-- Signal visualization will be rendered here -->
+                                                <svg class="signal-grid" id="signal-grid"></svg>
+                                                <div class="time-display" id="time-display">Time: 0.0s</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Viewer Controls -->
+                                        <div class="viewer-controls">
+                                            <div class="row">
+                                                <div class="col-md-3 col-6">
+                                                    <div class="control-group">
+                                                        <label>Speed</label>
+                                                        <div class="slider-control">
+                                                            <input type="range" class="form-range" id="speed-control" min="0.1" max="7" step="0.1" value="1">
+                                                            <span class="slider-value" id="speed-value">1.0x</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3 col-6">
+                                                    <div class="control-group">
+                                                        <label>Zoom</label>
+                                                        <div class="slider-control">
+                                                            <input type="range" class="form-range" id="zoom-control" min="0.1" max="10" step="0.1" value="1">
+                                                            <span class="slider-value" id="zoom-value">1.0x</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3 col-6">
+                                                    <div class="control-group">
+                                                        <label>Pan</label>
+                                                        <div class="slider-control">
+                                                            <input type="range" class="form-range" id="pan-control" min="0" max="100" step="1" value="0">
+                                                            <span class="slider-value" id="pan-value">0%</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3 col-6">
+                                                    <div class="control-group">
+                                                        <label>Playback</label>
+                                                        <div class="btn-group-control">
+                                                            <button class="btn btn-primary btn-sm" id="play-btn">
+                                                                <i class="bi-play-fill"></i>
+                                                            </button>
+                                                            <button class="btn btn-secondary btn-sm" id="pause-btn">
+                                                                <i class="bi-pause-fill"></i>
+                                                            </button>
+                                                            <button class="btn btn-outline-secondary btn-sm" id="reset-btn">
+                                                                <i class="bi-arrow-clockwise"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -126,20 +344,27 @@
                                     <div class="col-lg-3 col-12">
                                         <div class="control-panel">
                                             <h5 class="mb-3">EEG Controls</h5>
-                                            <!-- Add this in the control panel section, above the Analyze button -->
-                                    <div class="mb-4">
-                                        <h6>Signal Data</h6>
-                                        <div class="upload-container">
-                                            <input type="file" id="signal-upload" accept=".edf,.csv,.txt,.mat,.dat,.npy" hidden>
-                                            <button class="btn btn-outline-primary w-100 mb-2" id="upload-btn">
-                                                <i class="bi-cloud-upload me-2"></i>Upload Signal File
-                                            </button>
-                                            <div class="upload-info small text-muted">
-                                                Supported: CSV, TXT, MAT, DAT, NPY
+                                            
+                                            <!-- Upload and Analysis Section -->
+                                            <div class="mb-4">
+                                                <h6>EEG Signal Upload & Analysis</h6>
+                                                <div class="upload-container">
+                                                    <input type="file" id="signal-upload" accept=".npy,.npz" hidden>
+                                                    <button class="btn btn-outline-primary w-100 mb-2" id="upload-btn">
+                                                        <i class="bi-cloud-upload me-2"></i>Upload EEG File (.npy)
+                                                    </button>
+                                                    <div class="upload-info small text-muted">
+                                                        Upload NPY file for analysis
+                                                    </div>
+                                                    <div id="upload-status" class="mt-2 small"></div>
+                                                    
+                                                    <!-- Analysis Button -->
+                                                    <button id="analyzeBtn" class="btn btn-primary w-100 mt-3">
+                                                        <i class="bi-play-circle me-2"></i>Analyze with AI
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <div id="upload-status" class="mt-2 small"></div>
-                                        </div>
-                                    </div>
+                                            
                                             <!-- Channel Selection -->
                                             <div class="mb-4">
                                                 <h6>EEG Channels</h6>
@@ -164,29 +389,6 @@
                                                     <i class="bi-diagram-3 me-2"></i>Recurrence Plot
                                                 </div>
                                             </div>
-                                            
-                                            <!-- EEG Specific Controls -->
-                                            <div class="mb-3">
-                                                <h6>EEG Analysis</h6>
-                                                
-                                                <div class="form-check mb-2">
-                                                    <input class="form-check-input" type="checkbox" id="real-time-toggle" checked>
-                                                    <label class="form-check-label" for="real-time-toggle">
-                                                        Real-time Monitoring
-                                                    </label>
-                                                </div>
-                                                <div class="form-check mb-2">
-                                                    <input class="form-check-input" type="checkbox" id="abnormality-detection">
-                                                    <label class="form-check-label" for="heart-rate">
-                                                        Abnormality Detection
-                                                    </label>
-                                                </div>
-                                            </div>
-                                            </div>
-                                            
-                                            <button class="btn custom-btn w-100 mt-3" id="analyze-btn">
-                                                <i class="bi-play-circle me-2"></i>Start EEG Analysis
-                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -265,5 +467,6 @@
         <script src="js/custom.js"></script>
         <script src="js/eeg.js"></script>
 
+      
     </body>
 </html>
