@@ -5,7 +5,7 @@
 **Demo Video:** **[Watch Demo](https://drive.google.com/file/d/1qkg13pMTKEnBpkF7C6Z1bm0nTDVYh-XL/view)**
 
 **Team:** 
-- **[Alaa Abdelnasser](https://github.com/alaa)** 
+- **[Alaa Abdelnasser](https://github.com/Alaa-Fouad22)** 
 - **[Sarah Sameh](https://github.com/sarah012-210)** 
 - **[Samar Hatem](https://github.com/samar04052004)** 
 - **[Mariam Sherif](https://github.com/mariamsherif04)**
