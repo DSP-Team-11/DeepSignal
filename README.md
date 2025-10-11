@@ -113,7 +113,11 @@ DeepSignal is a user-friendly web platform that helps you analyze different type
 - Upload any sound file
 
 <p align="center">
-  <img src="1_site_pics/Screenshot 2025-10-09 202912.png" alt="DeepSignal Preview" >
+  <img src="1_site_pics/6005856669730457751.jpg" alt="DeepSignal Preview" >
+</p>
+
+<p align="center">
+  <img src="1_site_pics/6005856669730457752.jpg" alt="DeepSignal Preview" >
 </p>
 
 - Our AI will tell you if it contains drone sounds or not
