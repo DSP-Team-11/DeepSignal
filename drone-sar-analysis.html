@@ -92,6 +92,10 @@
                                 </ul>
                             </li>
                         </ul>
+
+                        <div class="d-none d-lg-block">
+                            <a href="#top" class="navbar-icon bi-person smoothscroll"></a>
+                        </div>
                     </div>
                 </div>
             </nav>
@@ -146,44 +150,44 @@
                                                 <strong id="fileName"></strong>
                                                 <span id="fileSize" class="text-muted ms-2"></span>
                                             </div>
-                                            <button type="button" class="btn-close" onclick="clearFile()"></button>
+                                            <button class="btn btn-outline-danger btn-sm" id="clearFileBtn">
                                         </div>
                                     </div>
 
                                     <div class="text-center">
-                                        <button id="analyzeBtn" class="btn custom-btn" disabled onclick="analyzeDroneSound()">
-                                            <i class="bi-play-circle me-2"></i>Analyze Drone Sound
+                                        <button id="analyzeBtn" class="btn custom-btn" type="button" disabled>
+                                            Analyze Drone Sound
                                         </button>
                                     </div>
 
-                                    <!-- Results Section -->
-                                    <div id="resultsSection" class="mt-4 d-none">
-                                        <h5 class="mb-3">Analysis Results</h5>
-                                        
-                                        <div class="row mb-4">
-                                            <div class="col-md-6">
-                                                <div class="p-3 bg-light rounded h-100">
-                                                    <h6>Classification Result</h6>
-                                                    <div id="classificationResult">
-                                                        <!-- Results will be populated here -->
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="p-3 bg-light rounded h-100">
-                                                    <h6>Signal Visualization</h6>
-                                                    <div class="waveform-container">
-                                                        <canvas id="waveformCanvas" width="100%" height="120"></canvas>
-                                                    </div>
+                                    <!-- Replace this section in your HTML -->
+                                <div id="resultsSection" class="mt-4 d-none">
+                                    <h5 class="mb-3">Analysis Results</h5>
+                                    
+                                    <div class="row mb-4">
+                                        <div class="col-md-6">
+                                            <div class="p-3 bg-light rounded h-100">
+                                                <h6>Classification Result</h6>
+                                                <div id="classificationResult">
+                                                    <!-- Results will be populated here -->
                                                 </div>
                                             </div>
                                         </div>
-
-                                        <div class="p-3 bg-light rounded">
-                                            <h6>Detailed Analysis</h6>
-                                            <div id="detailedAnalysis">
-                                                <!-- Detailed analysis will be populated here -->
+                                        <div class="col-md-6">
+                                            <div class="p-3 bg-light rounded h-100">
+                                                <h6>Signal Visualization</h6>
+                                                <div class="waveform-container">
+                                                    <canvas id="waveformCanvas" width="400" height="150"></canvas>
+                                                </div>
                                             </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Add this new section for detailed analysis -->
+                                    <div class="p-3 bg-light rounded">
+                                        <h6>Detailed Analysis</h6>
+                                        <div id="detailedAnalysis">
+                                            <!-- Detailed analysis will be populated here -->
                                         </div>
                                     </div>
                                 </div>
@@ -287,14 +291,19 @@
                 </div>
             </div>
         </footer>
+
+        
         
         <!-- JAVASCRIPT FILES -->
         <script src="js/jquery.min.js"></script>
         <script src="js/bootstrap.bundle.min.js"></script>
         <script src="js/drone-sar-analysis.js"></script>
-        <script src="js/click-scroll.js"></script>
+        <!-- <script src="js/click-scroll.js"></script> -->
         <script src="js/custom.js"></script>
         <script src="js/jquery.sticky.js"></script>
+        <!-- Add this script at the end of your HTML body, before closing </body> tag -->
+
         
     </body>
 </html>
+
