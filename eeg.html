@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="EEG Signal Analysis - Advanced neurological signal classification">
+        <meta name="author" content="">
+
+        <title>EEG Analysis - DeepSignal</title>
+
+        <!-- CSS FILES -->        
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Open+Sans&display=swap" rel="stylesheet">
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/bootstrap-icons.css" rel="stylesheet">
+        <link href="css/templatemo-topic-listing.css" rel="stylesheet">
+        <link href="css/medical-signals.css" rel="stylesheet">
+
+        
+        <style>
+            /* Signal Viewer Styles */
+            .signal-viewer-container {
+                background: #f8f9fa;
+                border-radius: 10px;
+                padding: 20px;
+                margin-bottom: 30px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            }
+            
+            .signal-canvas {
+                background: white;
+                border: 1px solid #dee2e6;
+                border-radius: 8px;
+                height: 400px;
+                position: relative;
+                overflow: hidden;
+            }
+            
+            #signal-display {
+                width: 100%;
+                height: 100%;
+                position: relative;
+            }
+            
+            .signal-grid {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+            }
+            
+            .signal-line {
+                stroke-width: 1.5;
+                fill: none;
+            }
+            
+            .signal-label {
+                position: absolute;
+                background: rgba(0,0,0,0.7);
+                color: white;
+                padding: 2px 6px;
+                border-radius: 3px;
+                font-size: 10px;
+                pointer-events: none;
+            }
+            
+            .control-panel {
+                background: white;
+                border-radius: 8px;
+                padding: 15px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            
+            .viewer-controls {
+                background: white;
+                border-radius: 8px;
+                padding: 15px;
+                margin-top: 15px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            
+            .control-group {
+                margin-bottom: 15px;
+            }
+            
+            .control-group label {
+                font-size: 0.85rem;
+                font-weight: 500;
+                margin-bottom: 5px;
+                display: block;
+            }
+            
+            .slider-control {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            
+            .slider-control input {
+                flex: 1;
+            }
+            
+            .slider-value {
+                min-width: 40px;
+                text-align: center;
+                font-size: 0.8rem;
+                color: #6c757d;
+            }
+            
+            .btn-group-control {
+                display: flex;
+                gap: 5px;
+            }
+            
+            .btn-group-control .btn {
+                flex: 1;
+                font-size: 0.8rem;
+                padding: 5px 8px;
+            }
+            
+            .channel-list {
+                max-height: 200px;
+                overflow-y: auto;
+                border: 1px solid #dee2e6;
+                border-radius: 5px;
+                padding: 10px;
+            }
+            
+            .channel-item {
+                display: flex;
+                align-items: center;
+                margin-bottom: 8px;
+            }
+            
+            .channel-item:last-child {
+                margin-bottom: 0;
+            }
+            
+            .channel-color {
+                width: 15px;
+                height: 15px;
+                border-radius: 3px;
+                margin-right: 8px;
+            }
+            
+            .viewer-option {
+                padding: 8px 12px;
+                border-radius: 5px;
+                margin-bottom: 5px;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+            
+            .viewer-option:hover {
+                background: #e9ecef;
+            }
+            
+            .viewer-option.active {
+                background: #80d0c7;
+                color: white;
+            }
+            
+            .upload-container {
+                border: 2px dashed #dee2e6;
+                border-radius: 8px;
+                padding: 15px;
+                text-align: center;
+                margin-bottom: 15px;
+            }
+            
+            .badges-container {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .time-display {
+                position: absolute;
+                bottom: 10px;
+                left: 10px;
+                background: rgba(0,0,0,0.7);
+                color: white;
+                padding: 5px 10px;
+                border-radius: 4px;
+                font-size: 0.8rem;
+                pointer-events: none;
+            }
+            
+            .modal-progress {
+                height: 25px;
+            }
+        </style>
+    </head>
+    
+    <body id="top">
+
+        <main>
+
+            <nav class="navbar navbar-expand-lg">
+                <div class="container">
+                    <a class="navbar-brand" href="index.html">
+                        <i class="bi-activity"></i>
+                        <span>DeepSignal</span>
+                    </a>
+
+                    <div class="d-lg-none ms-auto me-4">
+                        <a href="#top" class="navbar-icon bi-person smoothscroll"></a>
+                    </div>
+    
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+    
+                    <div class="collapse navbar-collapse" id="navbarNav">
+                        <ul class="navbar-nav ms-lg-5 me-lg-auto">
+                            <li class="nav-item">
+                                <a class="nav-link click-scroll" href="index.html#section_1">Home</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link click-scroll" href="index.html#section_2">Categories</a>
+                            </li>
+    
+                            <li class="nav-item">
+                                <a class="nav-link click-scroll" href="index.html#section_3">Features</a>
+                            </li>
+
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="navbarLightDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">Applications</a>
+
+                                <ul class="dropdown-menu dropdown-menu-light" aria-labelledby="navbarLightDropdownMenuLink">
+                                    <li><a class="dropdown-item" href="medical-signals.html">Medical Signals</a></li>
+                                    <li><a class="dropdown-item active" href="eeg.html">EEG Analysis</a></li>
+                                    <li><a class="dropdown-item" href="acoustic-signals.html">Acoustic Signals</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+            
+<header class="site-header d-flex flex-column justify-content-center align-items-center text-center">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-12">
+
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb justify-content-center">
+                        <li class="breadcrumb-item"><a href="index.html">Homepage</a></li>
+                        <li class="breadcrumb-item"><a href="medical-signals.html">Medical Signals</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">EEG Analysis</li>
+                    </ol>
+                </nav>
+
+                <h2 class="text-white display-4 fw-bold">EEG Signal<br>Classification Studio</h2>
+
+                <p class="text-white mt-3 fs-5">
+                    Advanced electroencephalogram analysis with AI-powered neurological 
+                    condition detection and multi-view visualization.
+                </p>
+
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+            <section class="topics-detail-section section-padding" id="analysis-tools">
+                <div class="container">
+                    <div class="row">
+
+                    
+                            
+                            <!-- Signal Viewer Section -->
+                            <div id="signal-viewer" class="signal-viewer-container">
+                                <div class="row">
+                                    <div class="col-lg-9 col-12">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h4 id="viewer-title">EEG Signal Viewer</h4>
+                                            
+                                        </div>
+                                        <div class="signal-canvas" id="signal-canvas">
+                                            <div id="signal-display">
+                                                <!-- Signal visualization will be rendered here -->
+                                                <svg class="signal-grid" id="signal-grid"></svg>
+                                                <div class="time-display" id="time-display">Time: 0.0s</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Viewer Controls -->
+                                        <div class="viewer-controls">
+                                            <div class="row">
+                                                <div class="col-md-3 col-6">
+                                                    <div class="control-group">
+                                                        <label>Speed</label>
+                                                        <div class="slider-control">
+                                                            <input type="range" class="form-range" id="speed-control" min="0.1" max="7" step="0.1" value="1">
+                                                            <span class="slider-value" id="speed-value">1.0x</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3 col-6">
+                                                    <div class="control-group">
+                                                        <label>Zoom</label>
+                                                        <div class="slider-control">
+                                                            <input type="range" class="form-range" id="zoom-control" min="0.1" max="10" step="0.1" value="1">
+                                                            <span class="slider-value" id="zoom-value">1.0x</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3 col-6">
+                                                    <div class="control-group">
+                                                        <label>Pan</label>
+                                                        <div class="slider-control">
+                                                            <input type="range" class="form-range" id="pan-control" min="0" max="100" step="1" value="0">
+                                                            <span class="slider-value" id="pan-value">0%</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3 col-6">
+                                                    <div class="control-group">
+                                                        <label>Playback</label>
+                                                        <div class="btn-group-control">
+                                                            <button class="btn btn-primary btn-sm" id="play-btn">
+                                                                <i class="bi-play-fill"></i>
+                                                            </button>
+                                                            <button class="btn btn-secondary btn-sm" id="pause-btn">
+                                                                <i class="bi-pause-fill"></i>
+                                                            </button>
+                                                            <button class="btn btn-outline-secondary btn-sm" id="reset-btn">
+                                                                <i class="bi-arrow-clockwise"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-lg-3 col-12">
+                                        <div class="control-panel">
+                                            <h5 class="mb-3">EEG Controls</h5>
+                                            
+                                            <!-- Upload and Analysis Section -->
+                                            <div class="mb-4">
+                                                <h6>EEG Signal Upload & Analysis</h6>
+                                                <div class="upload-container">
+                                                    <input type="file" id="signal-upload" accept=".npy,.npz" hidden>
+                                                    <button class="btn btn-outline-primary w-100 mb-2" id="upload-btn">
+                                                        <i class="bi-cloud-upload me-2"></i>Upload EEG File (.npy)
+                                                    </button>
+                                                    <div class="upload-info small text-muted">
+                                                        Upload NPY file for analysis
+                                                    </div>
+                                                    <div id="upload-status" class="mt-2 small"></div>
+                                                    
+                                                    <!-- Analysis Button -->
+                                                    <button id="analyzeBtn" class="btn btn-primary w-100 mt-3">
+                                                        <i class="bi-play-circle me-2"></i>Analyze with AI
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Channel Selection -->
+                                            <div class="mb-4">
+                                                <h6>EEG Channels</h6>
+                                                <div class="channel-list" id="channel-list">
+                                                    <!-- EEG channels will be populated dynamically -->
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Viewer Options -->
+                                            <div class="mb-4">
+                                                <h6>Viewer Options</h6>
+                                                <div class="viewer-option active" data-viewer="standard">
+                                                    <i class="bi-eye me-2"></i>Standard View
+                                                </div>
+                                                <div class="viewer-option" data-viewer="xor">
+                                                    <i class="bi-layers me-2"></i>XOR Comparison
+                                                </div>
+                                                <div class="viewer-option" data-viewer="polar">
+                                                    <i class="bi-bullseye me-2"></i>Polar View
+                                                </div>
+                                                <div class="viewer-option" data-viewer="recurrence">
+                                                    <i class="bi-diagram-3 me-2"></i>Recurrence Plot
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- EEG Specific Info -->
+                           <div class="row mt-5">
+    <div class="col-12">
+        <h4>EEG Analysis Features</h4>
+        <div class="row">
+            <div class="col-md-4 col-12 mb-4">
+                <div class="custom-block-icon text-center">
+                    <h5 class="mt-3">AI-Powered Diagnosis</h5>
+                    <div class="badges-container mb-3">
+  <span class="badge bg-danger me-1 mb-1">AD</span>
+  <span class="badge bg-warning text-dark me-1 mb-1">PD</span>
+  <span class="badge bg-info me-1 mb-1">FTD</span>
+  <span class="badge bg-success me-1 mb-1">MS</span>
+</div>
+
+                    <p>Deep learning models for accurate detection of Alzheimer's Disease, Parkinson's, Frontotemporal Dementia, and Multiple Sclerosis</p>
+                </div>
+            </div>
+
+            <div class="col-md-4 col-12 mb-4">
+                <div class="custom-block-icon text-center">
+                    <h5 class="mt-3">Multi-View Visualization</h5>
+                    <div class="badges-container mb-3">
+                        <span class="badge bg-primary me-1 mb-1">Standard</span>
+                        <span class="badge bg-warning me-1 mb-1">XOR</span>
+                        <span class="badge bg-info me-1 mb-1">Polar</span>
+                        <span class="badge bg-secondary me-1 mb-1">Recurrence</span>
+                    </div>
+                    <p>Comprehensive signal display with multiple visualization modes for detailed neurological pattern analysis and comparison</p>
+                </div>
+            </div>
+
+            <div class="col-md-4 col-12 mb-4">
+                <div class="custom-block-icon text-center">
+                    <h5 class="mt-3">Clinical Analytics</h5>
+                    <div class="badges-container mb-3">
+                        <span class="badge bg-success me-1 mb-1">19-Channel</span>
+                        <span class="badge bg-secondary me-1 mb-1">10-20 Montage</span>
+                        <span class="badge bg-dark me-1 mb-1">Real-time</span>
+                    </div>
+                    <p>Professional-grade EEG analysis with full 19-channel support and real-time processing for immediate clinical insights</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+          <footer class="site-footer section-padding">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-3 col-12 mb-4 pb-2">
+                        <a class="navbar-brand mb-2" href="index.html">
+                             <i class="bi-activity"></i>
+                             <span>DeepSignal</span>
+                        </a>
+                        <p class="text-muted">Advanced 1D Signal Analysis Platform</p>
+                    </div>
+
+            </div>
+        </footer>
+
+        <!-- JAVASCRIPT FILES -->
+        <script src="js/jquery.min.js"></script>
+        <script src="js/bootstrap.bundle.min.js"></script>
+        <script src="js/jquery.sticky.js"></script>
+        <script src="js/custom.js"></script>
+        <script src="js/eeg.js"></script>
+
+      
+    </body>
+</html>

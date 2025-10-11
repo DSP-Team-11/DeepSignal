@@ -1,0 +1,139 @@
+/* Acoustic Signals Specific Styles */
+
+.acoustic-hero-section {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    min-height: 60vh;
+    padding: 100px 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.acoustic-hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><path fill="rgba(255,255,255,0.1)" d="M500,250c138.07,0,250,111.93,250,250s-111.93,250-250,250s-250-111.93-250-250S361.93,250,500,250z"/></svg>') repeat;
+    animation: float 20s infinite linear;
+}
+
+@keyframes float {
+    0% { transform: translateX(0) translateY(0); }
+    100% { transform: translateX(-100px) translateY(-100px); }
+}
+
+.visualization-section {
+    background: #f8f9fa;
+}
+
+.control-panel {
+    border-left: 4px solid #2a5298;
+}
+
+.visualization-container {
+    border: 1px solid #e9ecef;
+}
+
+.canvas-wrapper {
+    background: #000;
+    border-radius: 8px;
+    padding: 20px;
+    position: relative;
+}
+
+#signalCanvas {
+    width: 100%;
+    height: 400px;
+    background: #000;
+    border-radius: 4px;
+}
+
+.stat-card {
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #2a5298;
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+}
+
+.feature-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid #e9ecef;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+}
+
+.feature-icon {
+    text-align: center;
+}
+
+/* Signal type specific colors */
+.signal-doppler { border-left-color: #007bff; }
+.signal-drone { border-left-color: #28a745; }
+.signal-submarine { border-left-color: #17a2b8; }
+.signal-radar { border-left-color: #dc3545; }
+
+/* Analysis mode indicators */
+.mode-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.mode-time { background-color: #007bff; }
+.mode-frequency { background-color: #28a745; }
+.mode-spectrogram { background-color: #ffc107; }
+.mode-comparison { background-color: #6f42c1; }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .acoustic-hero-section {
+        min-height: 50vh;
+        padding: 80px 0;
+    }
+    
+    .control-panel .row {
+        margin-bottom: 1rem;
+    }
+    
+    .stat-card {
+        margin-bottom: 1rem;
+    }
+}
+
+/* Loading animation */
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #2a5298;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 8px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Signal waveform animation */
+.signal-path {
+    animation: drawSignal 2s ease-in-out infinite;
+}
+
+@keyframes drawSignal {
+    0% { stroke-dashoffset: 1000; }
+    100% { stroke-dashoffset: 0; }
+}
