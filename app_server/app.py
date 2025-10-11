@@ -1,3 +1,9 @@
+# =============================================================================
+# Fix matplotlib backend to avoid tkinter threading issues
+# =============================================================================
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend
+import matplotlib.pyplot as plt
 from flask import Flask, request, jsonify, send_file, render_template, send_from_directory
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
@@ -22,6 +28,8 @@ import traceback
 import webbrowser
 import threading
 import os
+from transformers import AutoProcessor, AutoModelForAudioClassification
+
 
 # Import your model functions
 try:
@@ -33,31 +41,23 @@ except ImportError:
         pass
 
 app = Flask(__name__)
+# Allow all origins for development
 CORS(app)
 
 # =============================================================================
 # Configuration
 # =============================================================================
 UPLOAD_DIR = "uploads"
-STATIC_DIR = "static"
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
 ALLOWED_EXTENSIONS = {'npy', 'npz', 'csv', 'txt'}
 
 # Configuration of drone and sar
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
-ALLOWED_AUDIO_EXTENSIONS = {'wav'}
+ALLOWED_AUDIO_EXTENSIONS = {'wav', 'mp3', 'm4a', 'flac', 'aac'}
 ALLOWED_IMAGE_EXTENSIONS = {'tif', 'tiff', 'jpg', 'jpeg', 'png'}
-
-# Audio processing parameters (update these to match your model's training)
-SAMPLE_RATE = 16000
-N_MELS = 128
-N_FFT = 2048
-HOP_LENGTH = 512
-DURATION = 5  # seconds
 
 # Create directories
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-os.makedirs(STATIC_DIR, exist_ok=True)
 
 # =============================================================================
 # Load Models
@@ -95,13 +95,34 @@ eeg_label_map = [
     "Parkinson's Disease"
 ]
 
+# Load Drone Model
+try:
+    MODEL_NAME = "preszzz/drone-audio-detection-05-17-trial-0"
+    print(f"🚀 Loading drone model: {MODEL_NAME}")
+    processor = AutoProcessor.from_pretrained(MODEL_NAME)
+    model = AutoModelForAudioClassification.from_pretrained(MODEL_NAME)
+    print("✅ Drone model loaded successfully")
+    print(f"📋 Available drone classes: {list(model.config.id2label.values())}")
+except Exception as e:
+    print(f"❌ Error loading drone model: {e}")
+    processor = None
+    model = None
+
 # =============================================================================
-# Helper Functions for EEG
+# Helper Functions
 # =============================================================================
 
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def allowed_audio_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_AUDIO_EXTENSIONS
+
+def allowed_image_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_IMAGE_EXTENSIONS
 
 def save_uploaded_file(file, filename):
     """Save uploaded file to uploads directory"""
@@ -193,8 +214,210 @@ def process_uploaded_file(filepath):
     
     return signal
 
+def validate_audio_file(audio_path):
+    """Validate audio file before processing"""
+    try:
+        # Check file exists and has content
+        if not os.path.exists(audio_path):
+            raise ValueError("Audio file does not exist")
+        
+        file_size = os.path.getsize(audio_path)
+        if file_size < 100:
+            raise ValueError(f"Audio file too small ({file_size} bytes)")
+        
+        # Try to load and get basic info
+        waveform, sr = librosa.load(audio_path, sr=None, duration=1)  # Load just 1 second for validation
+        
+        if len(waveform) < 400:
+            raise ValueError(f"Audio too short: {len(waveform)} samples")
+        
+        if sr < 8000:
+            raise ValueError(f"Sample rate too low: {sr} Hz")
+            
+        print(f"✅ Audio validation passed - SR: {sr} Hz, Samples: {len(waveform)}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Audio validation failed: {e}")
+        raise ValueError(f"Invalid audio file: {str(e)}")
+
+def predict_drone(audio_path):
+    try:
+        print(f"🔊 Loading audio from: {audio_path}")
+        
+        # Load with librosa - ensure we get enough samples
+        waveform, sr = librosa.load(
+            audio_path, 
+            sr=16000,
+            mono=True,
+            duration=5.0  # Ensure minimum 5 seconds
+        )
+        
+        print(f"✅ Audio loaded - SR: {sr} Hz, Samples: {len(waveform)}, Duration: {len(waveform)/sr:.2f}s")
+        
+        # Validate minimum length - need at least 1 second for processing
+        min_samples = 16000  # 1 second at 16kHz
+        if len(waveform) < min_samples:
+            print(f"⚠️ Audio too short ({len(waveform)} samples), padding to {min_samples}")
+            # Pad with zeros to reach minimum length
+            padded_waveform = np.zeros(min_samples)
+            padded_waveform[:len(waveform)] = waveform
+            waveform = padded_waveform
+        
+        print(f"🎯 Final waveform shape: {waveform.shape}, Min: {waveform.min():.4f}, Max: {waveform.max():.4f}")
+        
+        # Convert to torch tensor - ensure correct shape for processor
+        # The processor expects a 1D array for single audio
+        waveform_tensor = torch.from_numpy(waveform).float()
+        print(f"🎯 Tensor shape: {waveform_tensor.shape}")
+        
+        # Model input - use the raw waveform, not unsqueezed
+        print("🧠 Preparing model input...")
+        inputs = processor(
+            waveform_tensor,  # Use 1D tensor, processor will handle batching
+            sampling_rate=16000, 
+            return_tensors="pt", 
+            padding=True
+        )
+        
+        print(f"✅ Inputs prepared: {inputs.keys()}")
+        print(f"   - input_values shape: {inputs['input_values'].shape}")
+
+        with torch.no_grad():
+            logits = model(**inputs).logits
+            pred_id = torch.argmax(logits, dim=-1).item()
+            label = model.config.id2label[pred_id]
+            
+            # Calculate confidence scores
+            probabilities = torch.nn.functional.softmax(logits, dim=1)
+            confidence = probabilities[0][pred_id].item()
+            
+            print(f"✅ Drone classification: {label} (confidence: {confidence:.3f})")
+        
+        return label, confidence
+        
+    except Exception as e:
+        print(f"❌ Error in predict_drone: {str(e)}")
+        traceback.print_exc()
+        raise e
+def analyze_sar_image(image_path, is_tiff=True):
+    """
+    Analyze SAR image using the provided Python code
+    Returns: original_image, generated_plot, analysis_stats
+    """
+    try:
+        if is_tiff:
+            # Process TIFF files with rasterio
+            with rasterio.open(image_path) as src:
+                img = src.read(1)  # read first band
+                
+                # Get image metadata
+                metadata = {
+                    'width': src.width,
+                    'height': src.height,
+                    'crs': str(src.crs),
+                    'transform': str(src.transform),
+                    'count': src.count,
+                    'dtype': str(src.dtypes[0])
+                }
+        else:
+            # Process regular images (JPG, PNG)
+            pil_img = Image.open(image_path)
+            if pil_img.mode != 'L':
+                img = np.array(pil_img.convert('L'))  # Convert to grayscale
+            else:
+                img = np.array(pil_img)
+            
+            metadata = {
+                'width': pil_img.width,
+                'height': pil_img.height,
+                'mode': pil_img.mode,
+                'format': pil_img.format
+            }
+
+        # Convert to dB scale (avoid log of zero) - This is the key SAR analysis step
+        img_db = 10 * np.log10(img.astype(np.float64) + 1e-6)
+
+        # ----------------------------
+        # Generate the analysis plot (exactly as in your Python code)
+        # ----------------------------
+        plt.figure(figsize=(12, 6))
+
+        # 1. Show image
+        plt.subplot(1, 2, 1)
+        plt.imshow(img_db, cmap="gray")
+        plt.title("SAR Quicklook")
+        plt.colorbar(label="Intensity (dB)")
+        plt.axis("off")
+
+        # 2. Histogram of intensities
+        plt.subplot(1, 2, 2)
+        plt.hist(img_db.flatten(), bins=200, color="darkorange", edgecolor="black")
+        plt.xlabel("Backscatter Intensity (dB)")
+        plt.ylabel("Number of Pixels")
+        plt.title("Histogram of Pixel Intensities")
+
+        plt.tight_layout()
+
+        # Save plot to bytes
+        plot_buffer = io.BytesIO()
+        plt.savefig(plot_buffer, format='png', dpi=150, bbox_inches='tight')
+        plot_buffer.seek(0)
+        plot_data = base64.b64encode(plot_buffer.getvalue()).decode('utf-8')
+        plt.close()
+
+        # Create display version of original image (converted to PNG)
+        original_buffer = io.BytesIO()
+        
+        if is_tiff:
+            # Convert TIFF to PNG for display using the dB scaled image
+            plt.figure(figsize=(8, 6))
+            plt.imshow(img_db, cmap="gray")
+            plt.title("SAR Image (dB Scale)")
+            plt.colorbar(label="Intensity (dB)")
+            plt.axis("off")
+            plt.tight_layout()
+            plt.savefig(original_buffer, format='png', dpi=150, bbox_inches='tight')
+            plt.close()
+        else:
+            # For regular images
+            plt.figure(figsize=(8, 6))
+            plt.imshow(img, cmap="viridis")
+            plt.title("Uploaded Image")
+            plt.colorbar(label="Intensity")
+            plt.axis("off")
+            plt.tight_layout()
+            plt.savefig(original_buffer, format='png', dpi=150, bbox_inches='tight')
+            plt.close()
+        
+        original_buffer.seek(0)
+        original_data = base64.b64encode(original_buffer.getvalue()).decode('utf-8')
+
+        # Calculate statistics (exactly as in your Python code)
+        stats = {
+            'mean': round(float(np.mean(img_db)), 4),
+            'median': round(float(np.median(img_db)), 4),
+            'min': round(float(np.min(img_db)), 4),
+            'max': round(float(np.max(img_db)), 4),
+            'std': round(float(np.std(img_db)), 4),
+            'variance': round(float(np.var(img_db)), 4)
+        }
+
+        # Print statistics to console (for debugging)
+        print("SAR Analysis Results:")
+        print("Mean:", stats['mean'])
+        print("Median:", stats['median'])
+        print("Min:", stats['min'])
+        print("Max:", stats['max'])
+        print("Std:", stats['std'])
+
+        return original_data, plot_data, stats, metadata
+
+    except Exception as e:
+        raise Exception(f"Error in SAR analysis: {str(e)}")
+
 # =============================================================================
-# Main Routes
+# Main Routes - Serve All HTML Pages
 # =============================================================================
 
 @app.route("/")
@@ -209,17 +432,65 @@ def ecg_page():
 
 @app.route("/eeg")
 def eeg_page():
-    """Serve EEG analysis page - directly from root directory"""
+    """Serve EEG analysis page"""
+    return send_file("eeg.html")
+
+@app.route("/doppler-analysis")
+def doppler_analysis():
+    """Serve Doppler analysis page"""
+    return send_file("doppler-analysis.html")
+
+@app.route("/spectro")
+def spectro():
+    """Serve spectrogram analysis page"""
+    return send_file("spectro.html")
+
+@app.route("/drone-sar-analysis")
+def drone_sar_analysis():
+    """Serve drone and SAR analysis page"""
+    return send_file("drone-sar-analysis.html")
+
+# Serve any other HTML pages you have
+@app.route("/<page_name>.html")
+def serve_html(page_name):
+    """Serve any HTML page by name"""
     try:
-        return send_file("eeg.html")
+        return send_file(f"{page_name}.html")
     except FileNotFoundError:
-        return "EEG page not found. Please ensure eeg.html is in the root directory.", 404
+        return f"Page {page_name}.html not found", 404
 
-@app.route('/static/<path:filename>')
-def serve_static(filename):
-    """Serve static files (CSS, JS, images, etc.)"""
-    return send_from_directory(STATIC_DIR, filename)
+# =============================================================================
+# Static File Serving
+# =============================================================================
 
+@app.route('/js/<path:filename>')
+def serve_js(filename):
+    """Serve JavaScript files"""
+    return send_from_directory('js', filename)
+
+@app.route('/css/<path:filename>')
+def serve_css(filename):
+    """Serve CSS files"""
+    return send_from_directory('css', filename)
+
+@app.route('/images/<path:filename>')
+def serve_images(filename):
+    """Serve image files"""
+    return send_from_directory('images', filename)
+
+@app.route('/icons/<path:filename>')
+def serve_icons(filename):
+    """Serve icon files"""
+    return send_from_directory('icons', filename)
+
+# Serve any other static files
+@app.route('/<path:filename>')
+def serve_static_files(filename):
+    """Serve any static files (fallback)"""
+    try:
+        return send_from_directory('.', filename)
+    except FileNotFoundError:
+        return "File not found", 404
 
 # =============================================================================
 # Health Check & System Info
@@ -234,7 +505,7 @@ def health_check():
         "models_loaded": {
             "ecg_model": ecg_model is not None,
             "eeg_model": eeg_model is not None,
-            "drone_model": drone_model is not None
+            "drone_model": model is not None
         },
         "upload_directory": UPLOAD_DIR,
         "supported_applications": [
@@ -441,45 +712,11 @@ def delete_file(filename):
         return jsonify({"message": f"File {safe_filename} deleted successfully"})
     except Exception as e:
        return jsonify({"error": f"Could not delete file: {str(e)}"}), 500
-    
-# ---------------------------
-# الصفحة الرئيسية
-# ---------------------------
-# @app.route('/doppler-analysis')
-# def index():
-#     return send_from_directory('.', 'doppler-analysis.html')
-@app.route("/doppler-analysis")
-def index():
-    """Serve Doppler analysis page"""
-    return send_file("doppler-analysis.html")
 
+# =============================================================================
+# Doppler Analysis Endpoints
+# =============================================================================
 
-# ---------------------------
-# خدمة الملفات الثابتة
-# ---------------------------
-@app.route('/js/<path:filename>')
-def js_files(filename):
-    return send_from_directory('js', filename)
-
-
-@app.route('/css/<path:filename>')
-def css_files(filename):
-    return send_from_directory('css', filename)
-
-
-@app.route('/images/<path:filename>')
-def images_files(filename):
-    return send_from_directory('images', filename)
-
-
-@app.route('/icons/<path:filename>')
-def icons_files(filename):
-    return send_from_directory('icons', filename)
-
-
-# ---------------------------
-# توليد الصوت - مع إصلاح صفارة الإسعاف
-# ---------------------------
 @app.route('/simulate', methods=['POST'])
 def simulate():
     data = request.get_json()
@@ -573,9 +810,6 @@ def simulate():
     sf.write(buf, signal, fs, format='WAV')
     buf.seek(0)
     return send_file(buf, mimetype="audio/wav")
-
-#########################################
-
 
 @app.route('/upload_car', methods=['POST'])
 def upload_car():
@@ -678,327 +912,166 @@ def upload_car():
         })
     except Exception as e:
         return jsonify({"error": f"Error processing file: {str(e)}"}), 500
-# ---------------------------
-# صفحة spectrogram
-# ---------------------------
-@app.route("/spectro")
-def spectro():
-    """Serve spectrogram analysis page"""
-    return send_file("spectro.html")
 
-####Drone and Sar
+# =============================================================================
+# Drone Analysis Endpoints
+# =============================================================================
 
+@app.route("/drone-test", methods=["GET"])
+def drone_test():
+    """Test endpoint for drone analysis"""
+    return jsonify({
+        "message": "Drone analysis endpoint is working",
+        "model_loaded": model is not None,
+        "processor_loaded": processor is not None,
+        "endpoints": {
+            "test": "/drone-test (GET)",
+            "predict": "/predict (POST)",
+            "health": "/api/health (GET)"
+        },
+        "instructions": "Send a POST request to /predict with an audio file"
+    })
 
-def allowed_audio_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_AUDIO_EXTENSIONS
+@app.route("/test-audio", methods=["POST"])
+def test_audio():
+    """Test endpoint to check if audio files are valid"""
+    if "file" not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
 
-def allowed_image_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_IMAGE_EXTENSIONS
+    file = request.files["file"]
+    if file.filename == "":
+        return jsonify({"error": "No file selected"}), 400
 
-# Load your trained model
-def load_drone_model(model_path):
-    """Load your pre-trained drone classification model"""
-    try:
-        # Load the model (adjust based on how your model was saved)
-        model = torch.load(model_path, map_location=torch.device('cpu'))
-        model.eval()
-        print(f"Model loaded successfully from {model_path}")
-        return model
-    except Exception as e:
-        print(f"Error loading model: {e}")
-        return None
-
-# Load your model (update the path to your actual .pth file)
-MODEL_PATH = "audio_cnn_model.pth"  # Change this to your model file path
-drone_model = load_drone_model(MODEL_PATH)
-
-def preprocess_audio_for_model(audio_path):
-    """Preprocess audio to match your model's input requirements"""
-    try:
-        # Load audio file
-        waveform, sr = librosa.load(audio_path, sr=SAMPLE_RATE)
-        
-        # Ensure consistent duration
-        target_length = SAMPLE_RATE * DURATION
-        if len(waveform) > target_length:
-            waveform = waveform[:target_length]
-        else:
-            padding = target_length - len(waveform)
-            waveform = np.pad(waveform, (0, padding))
-        
-        # Create mel spectrogram (adjust based on your model's requirements)
-        mel_spectrogram = librosa.feature.melspectrogram(
-            y=waveform,
-            sr=SAMPLE_RATE,
-            n_fft=N_FFT,
-            hop_length=HOP_LENGTH,
-            n_mels=N_MELS
-        )
-        
-        # Convert to log scale
-        log_mel_spectrogram = librosa.power_to_db(mel_spectrogram, ref=np.max)
-        
-        # Normalize
-        log_mel_spectrogram = (log_mel_spectrogram - log_mel_spectrogram.mean()) / log_mel_spectrogram.std()
-        
-        # Add channel dimension and convert to tensor
-        spectrogram_tensor = torch.tensor(log_mel_spectrogram).unsqueeze(0).unsqueeze(0).float()
-        
-        return spectrogram_tensor, waveform, sr
-        
-    except Exception as e:
-        raise Exception(f"Audio preprocessing error: {str(e)}")
-
-def classify_with_model(audio_path):
-    """Use your trained model for classification"""
-    if drone_model is None:
-        return None
-    
-    try:
-        # Preprocess audio
-        spectrogram_tensor, waveform, sr = preprocess_audio_for_model(audio_path)
-        
-        # Make prediction
-        with torch.no_grad():
-            outputs = drone_model(spectrogram_tensor)
-            probabilities = torch.softmax(outputs, dim=1)
-            confidence, predicted = torch.max(probabilities, 1)
-            
-            # Update class labels to match your model's training
-            class_labels = ['Drone', 'Bird', 'Noise']
-            predicted_label = class_labels[predicted.item()]
-            confidence_score = confidence.item()
-        
-        return {
-            'label': predicted_label,
-            'confidence': confidence_score,
-            'model_used': True
-        }
-        
-    except Exception as e:
-        print(f"Model prediction error: {e}")
-        return None
-
-def analyze_sar_image(image_path, is_tiff=True):
-    """
-    Analyze SAR image using the provided Python code
-    Returns: original_image, generated_plot, analysis_stats
-    """
-    try:
-        if is_tiff:
-            # Process TIFF files with rasterio
-            with rasterio.open(image_path) as src:
-                img = src.read(1)  # read first band
-                
-                # Get image metadata
-                metadata = {
-                    'width': src.width,
-                    'height': src.height,
-                    'crs': str(src.crs),
-                    'transform': str(src.transform),
-                    'count': src.count,
-                    'dtype': str(src.dtypes[0])
-                }
-        else:
-            # Process regular images (JPG, PNG)
-            pil_img = Image.open(image_path)
-            if pil_img.mode != 'L':
-                img = np.array(pil_img.convert('L'))  # Convert to grayscale
-            else:
-                img = np.array(pil_img)
-            
-            metadata = {
-                'width': pil_img.width,
-                'height': pil_img.height,
-                'mode': pil_img.mode,
-                'format': pil_img.format
-            }
-
-        # Convert to dB scale (avoid log of zero) - This is the key SAR analysis step
-        img_db = 10 * np.log10(img.astype(np.float64) + 1e-6)
-
-        # ----------------------------
-        # Generate the analysis plot (exactly as in your Python code)
-        # ----------------------------
-        plt.figure(figsize=(12, 6))
-
-        # 1. Show image
-        plt.subplot(1, 2, 1)
-        plt.imshow(img_db, cmap="gray")
-        plt.title("SAR Quicklook")
-        plt.colorbar(label="Intensity (dB)")
-        plt.axis("off")
-
-        # 2. Histogram of intensities
-        plt.subplot(1, 2, 2)
-        plt.hist(img_db.flatten(), bins=200, color="darkorange", edgecolor="black")
-        plt.xlabel("Backscatter Intensity (dB)")
-        plt.ylabel("Number of Pixels")
-        plt.title("Histogram of Pixel Intensities")
-
-        plt.tight_layout()
-
-        # Save plot to bytes
-        plot_buffer = io.BytesIO()
-        plt.savefig(plot_buffer, format='png', dpi=150, bbox_inches='tight')
-        plot_buffer.seek(0)
-        plot_data = base64.b64encode(plot_buffer.getvalue()).decode('utf-8')
-        plt.close()
-
-        # Create display version of original image (converted to PNG)
-        original_buffer = io.BytesIO()
-        
-        if is_tiff:
-            # Convert TIFF to PNG for display using the dB scaled image
-            plt.figure(figsize=(8, 6))
-            plt.imshow(img_db, cmap="gray")
-            plt.title("SAR Image (dB Scale)")
-            plt.colorbar(label="Intensity (dB)")
-            plt.axis("off")
-            plt.tight_layout()
-            plt.savefig(original_buffer, format='png', dpi=150, bbox_inches='tight')
-            plt.close()
-        else:
-            # For regular images
-            plt.figure(figsize=(8, 6))
-            plt.imshow(img, cmap="viridis")
-            plt.title("Uploaded Image")
-            plt.colorbar(label="Intensity")
-            plt.axis("off")
-            plt.tight_layout()
-            plt.savefig(original_buffer, format='png', dpi=150, bbox_inches='tight')
-            plt.close()
-        
-        original_buffer.seek(0)
-        original_data = base64.b64encode(original_buffer.getvalue()).decode('utf-8')
-
-        # Calculate statistics (exactly as in your Python code)
-        stats = {
-            'mean': round(float(np.mean(img_db)), 4),
-            'median': round(float(np.median(img_db)), 4),
-            'min': round(float(np.min(img_db)), 4),
-            'max': round(float(np.max(img_db)), 4),
-            'std': round(float(np.std(img_db)), 4),
-            'variance': round(float(np.var(img_db)), 4)
-        }
-
-        # Print statistics to console (for debugging)
-        print("SAR Analysis Results:")
-        print("Mean:", stats['mean'])
-        print("Median:", stats['median'])
-        print("Min:", stats['min'])
-        print("Max:", stats['max'])
-        print("Std:", stats['std'])
-
-        return original_data, plot_data, stats, metadata
-
-    except Exception as e:
-        raise Exception(f"Error in SAR analysis: {str(e)}")
-
-
-
-@app.route('/classify', methods=['POST'])
-def classify_drone_audio():
-    """
-    Classify drone audio files using your trained model
-    Expected: WAV file upload
-    Returns: Classification results with confidence
-    """
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file uploaded'}), 400
-    
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'error': 'No file selected'}), 400
-    
-    if not allowed_audio_file(file.filename):
-        return jsonify({'error': 'Invalid file type. Please upload a WAV file.'}), 400
-    
     try:
         # Save file temporarily
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_file:
-            file.save(temp_file.name)
-            temp_path = temp_file.name
+        temp_path = os.path.join(UPLOAD_DIR, f"test_{secure_filename(file.filename)}")
+        file.save(temp_path)
         
-        # Try to use the trained model first
-        model_prediction = classify_with_model(temp_path)
+        # Get file info
+        file_size = os.path.getsize(temp_path)
         
-        if model_prediction:
-            # Use model prediction
-            result = model_prediction
-            result['analysis'] = {
-                'model_used': True,
-                'prediction_source': 'Trained Model'
-            }
-        else:
-            # Fallback to mock classification if model fails
-            import wave
-            
-            with wave.open(temp_path, 'rb') as wav_file:
-                frames = wav_file.getnframes()
-                rate = wav_file.getframerate()
-                duration = frames / float(rate)
-                
-                # Read some sample data for mock analysis
-                sample_width = wav_file.getsampwidth()
-                frames = wav_file.readframes(min(1000, wav_file.getnframes()))
-                
-                if sample_width == 2:
-                    # Convert to numpy array for analysis
-                    data = np.frombuffer(frames, dtype=np.int16)
-                else:
-                    data = np.frombuffer(frames, dtype=np.int8)
-            
-            # Mock classification based on audio characteristics
-            features = {
-                'duration': duration,
-                'mean_amplitude': np.mean(np.abs(data)),
-                'std_amplitude': np.std(data),
-                'max_frequency': np.max(np.abs(np.fft.fft(data))),
-            }
-            
-            # Simple mock classifier
-            drone_types = ['Drone', 'Bird', 'Noise']
-            confidence = np.random.uniform(0.7, 0.98)
-            
-            # Determine drone type based on features (mock logic)
-            if features['duration'] > 5 and features['mean_amplitude'] > 1000:
-                label = drone_types[0]  # DJI Phantom
-            elif features['max_frequency'] > 5000:
-                label = drone_types[1]  # DJI Mavic
-            elif features['std_amplitude'] > 500:
-                label = drone_types[2]  # Autel Evo
-            else:
-                label = drone_types[3]  # Custom Quadcopter
-            
-            result = {
-                'label': label,
-                'confidence': round(confidence, 3),
-                'analysis': {
-                    'duration_seconds': round(duration, 2),
-                    'sample_rate': rate,
-                    'audio_characteristics': {
-                        'mean_amplitude': round(float(features['mean_amplitude']), 2),
-                        'std_amplitude': round(float(features['std_amplitude']), 2),
-                        'max_frequency': round(float(features['max_frequency']), 2)
-                    },
-                    'model_used': False,
-                    'prediction_source': 'Fallback Analysis'
-                }
-            }
+        # Test loading with librosa
+        waveform, sr = librosa.load(temp_path, sr=None)
+        duration = len(waveform) / sr
         
-        # Clean up temporary file
-        os.unlink(temp_path)
+        # Clean up
+        os.remove(temp_path)
         
-        return jsonify(result)
+        return jsonify({
+            "valid": True,
+            "file_size_bytes": file_size,
+            "sample_rate": sr,
+            "samples": len(waveform),
+            "duration_seconds": round(duration, 2),
+            "message": "Audio file is valid"
+        })
         
     except Exception as e:
-        # Clean up in case of error
         if 'temp_path' in locals() and os.path.exists(temp_path):
-            os.unlink(temp_path)
-        return jsonify({'error': f'Error processing audio file: {str(e)}'}), 500
+            try:
+                os.remove(temp_path)
+            except:
+                pass
+        return jsonify({
+            "valid": False,
+            "error": str(e),
+            "message": "Audio file is invalid or corrupted"
+        }), 400
+
+
+@app.route("/predict/status", methods=["GET"])
+def predict_status():
+    """Get current prediction system status"""
+    return jsonify({
+        "model_loaded": model is not None,
+        "processor_loaded": processor is not None,
+        "system_ready": model is not None and processor is not None,
+        "available_classes": list(model.config.id2label.values()) if model else [],
+        "timestamp": datetime.now().isoformat()
+    })      
+  # =============================================================================
+# Drone Prediction Endpoint
+# =============================================================================
+
+@app.route("/predict", methods=["POST"])
+def predict():
+    """Main endpoint for drone audio classification"""
+    try:
+        if model is None or processor is None:
+            return jsonify({"error": "Drone model not loaded"}), 500
+
+        if "file" not in request.files:
+            return jsonify({"error": "No audio file uploaded"}), 400
+
+        file = request.files["file"]
+        if file.filename == "":
+            return jsonify({"error": "No file selected"}), 400
+
+        if not allowed_audio_file(file.filename):
+            return jsonify({"error": f"Invalid file type. Allowed: {ALLOWED_AUDIO_EXTENSIONS}"}), 400
+
+        # Save file temporarily
+        temp_path = os.path.join(UPLOAD_DIR, f"drone_{secure_filename(file.filename)}")
+        file.save(temp_path)
+        
+        print(f"📁 Saved uploaded file to: {temp_path}")
+
+        try:
+            # Validate audio file first
+            validate_audio_file(temp_path)
+            
+            # Run prediction
+            label, confidence = predict_drone(temp_path)
+            
+            # Get all class probabilities for better frontend display
+            waveform, sr = librosa.load(temp_path, sr=16000, mono=True, duration=10.0)
+            if len(waveform) < 16000:
+                target_length = 16000
+                repeats = (target_length // len(waveform)) + 1
+                waveform = np.tile(waveform, repeats)[:target_length]
+            
+            audio_list = waveform.tolist()
+            inputs = processor(audio_list, sampling_rate=16000, return_tensors="pt", padding=True)
+            
+            with torch.no_grad():
+                outputs = model(**inputs)
+                logits = outputs.logits
+                probabilities = torch.nn.functional.softmax(logits, dim=1)
+                
+                # Get all class probabilities
+                all_probs = {}
+                for i, class_name in model.config.id2label.items():
+                    all_probs[class_name] = round(probabilities[0][i].item(), 4)
+            
+            # Clean up
+            os.remove(temp_path)
+            
+            return jsonify({
+                "success": True,
+                "prediction": label,
+                "confidence": round(confidence, 4),
+                "all_probabilities": all_probs,
+                "message": "Classification successful",
+                "timestamp": datetime.now().isoformat()
+            })
+            
+        except Exception as e:
+            # Clean up on error
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+            raise e
+
+    except Exception as e:
+        print(f"❌ Prediction error: {str(e)}")
+        traceback.print_exc()
+        return jsonify({
+            "success": False,
+            "error": f"Prediction failed: {str(e)}"
+        }), 500
+    
+# =============================================================================
+# SAR Analysis Endpoints
+# =============================================================================
 
 @app.route('/sar/analyze', methods=['POST'])
 def analyze_sar():
@@ -1089,21 +1162,51 @@ def convert_tiff():
             os.unlink(tiff_path)
         return jsonify({'error': f'Error converting TIFF to PNG: {str(e)}'}), 500
 
-
 # =============================================================================
 # Application Entry Point
 # =============================================================================
+# Add this to your Flask app (before the if __name__ == "__main__": section)
+@app.route("/debug/routes")
+def debug_routes():
+    """Debug endpoint to show all available routes"""
+    routes = []
+    for rule in app.url_map.iter_rules():
+        routes.append({
+            'endpoint': rule.endpoint,
+            'methods': list(rule.methods),
+            'path': str(rule)
+        })
+    return jsonify({
+        'total_routes': len(routes),
+        'routes': routes
+    })
 
 if __name__ == "__main__":
     print(f"🚀 Starting Multi-Model Medical Analysis Server")
     print(f"📍 Upload directory: {os.path.abspath(UPLOAD_DIR)}")
     print(f"📊 Supported file types: {ALLOWED_EXTENSIONS}")
-    print(f"🤖 Models: ECG - {'Loaded' if ecg_model else 'Not loaded'}, EEG - {'Loaded' if eeg_model else 'Not loaded'}")
+    print(f"🤖 Models: ECG - {'Loaded' if ecg_model else 'Not loaded'}, EEG - {'Loaded' if eeg_model else 'Not loaded'}, Drone - {'Loaded' if model else 'Not loaded'}")
     print(f"🌐 Web Applications:")
     print(f"   - Main: http://127.0.0.1:5000")
     print(f"   - ECG Analysis: http://127.0.0.1:5000/ecg")
     print(f"   - EEG Analysis: http://127.0.0.1:5000/eeg")
+    print(f"   - Doppler Analysis: http://127.0.0.1:5000/doppler-analysis")
+    print(f"   - Drone & SAR Analysis: http://127.0.0.1:5000/drone-sar-analysis")
+    print(f"   - Spectrogram Analysis: http://127.0.0.1:5000/spectro")
     print(f"🌐 API Health: http://127.0.0.1:5000/api/health")
     
-    port = int(os.environ.get("PORT", 5000))
-    app.run(debug=True, host='0.0.0.0', port=port)
+@app.before_request
+def log_request_info():
+    print(f"📥 Incoming request: {request.method} {request.path}")
+    if request.files:
+        print(f"📁 Files: {list(request.files.keys())}")
+
+@app.after_request
+def log_response_info(response):
+    print(f"📤 Outgoing response: {response.status_code}")
+    return response
+    # Run the app
+
+
+port = int(os.environ.get("PORT", 5000))
+app.run(debug=True, host='0.0.0.0', port=port)

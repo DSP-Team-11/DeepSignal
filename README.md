@@ -55,10 +55,18 @@ DeepSignal is a user-friendly web platform that helps you analyze different type
   <img src="1_site_pics/Screenshot 2025-10-09 202549.png" alt="DeepSignal Preview" >
 </p>
 
+<p align="center">
+  <img src="1_site_pics/Screenshot 2025-10-10 004950.png" alt="DeepSignal Preview" >
+</p>
+
 **Recurrence View**: Understand patterns between different heart channels
 
 <p align="center">
   <img src="1_site_pics/Screenshot 2025-10-09 202614.png" alt="DeepSignal Preview" >
+</p>
+
+<p align="center">
+  <img src="1_site_pics/Screenshot 2025-10-10 005213.png" alt="DeepSignal Preview" >
 </p>
 
 **For EEG (Brain Signals):**

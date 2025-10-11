@@ -11,37 +11,63 @@ class DroneAnalyzer {
         this.setupWaveformCanvas();
     }
 
-    bindEvents() {
-        const fileInput = document.getElementById('audioFile');
-        const uploadArea = document.querySelector('.upload-area');
+bindEvents() {
+    const fileInput = document.getElementById('audioFile');
+    const uploadArea = document.querySelector('.upload-area');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const clearFileBtn = document.getElementById('clearFileBtn'); // Add this
 
-        fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
+    // File input change
+    fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
+    
+    // Analyze button - FIXED
+    analyzeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('🎯 Analyze button clicked');
+        this.analyzeDroneSound();
+    });
 
-        // Drag & Drop
-        uploadArea.addEventListener('dragover', (e) => {
+    // Clear file button - ADD THIS
+    if (clearFileBtn) {
+        clearFileBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            uploadArea.style.borderColor = '#198754';
-        });
-
-        uploadArea.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            uploadArea.style.borderColor = '#dee2e6';
-        });
-
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            if (e.dataTransfer.files.length) {
-                fileInput.files = e.dataTransfer.files;
-                this.handleFileSelect(e);
-            }
+            this.clearFile();
         });
     }
 
+    // Drag & Drop
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.style.borderColor = '#198754';
+    });
+
+    uploadArea.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        uploadArea.style.borderColor = '#dee2e6';
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.style.borderColor = '#dee2e6';
+        if (e.dataTransfer.files.length) {
+            fileInput.files = e.dataTransfer.files;
+            this.handleFileSelect(e);
+        }
+    });
+
+    console.log('✅ Event binding completed');
+}
     handleFileSelect(event) {
         const file = event.target.files[0];
         if (!file) return;
-        if (!file.name.toLowerCase().endsWith('.wav')) {
-            alert('Please upload a .wav file');
+        
+        // Allow common audio formats, not just WAV
+        const audioFormats = ['.wav', '.mp3', '.m4a', '.flac', '.aac'];
+        const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+        
+        if (!audioFormats.includes(fileExtension)) {
+            alert('Please upload an audio file (WAV, MP3, M4A, FLAC, AAC)');
             return;
         }
 
@@ -58,16 +84,52 @@ class DroneAnalyzer {
         this.loadAudioFile(file);
     }
 
-    clearFile() {
-        document.getElementById('audioFile').value = '';
-        document.querySelector('.file-info').classList.add('d-none');
-        document.getElementById('analyzeBtn').disabled = true;
-        this.audioBuffer = null;
-        const canvas = document.getElementById('waveformCanvas');
+   clearFile() {
+    const fileInput = document.getElementById('audioFile');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const fileInfo = document.querySelector('.file-info');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const resultsSection = document.getElementById('resultsSection');
+    
+    // Reset file input
+    if (fileInput) fileInput.value = '';
+    
+    // Reset file info display
+    if (fileName) fileName.textContent = '';
+    if (fileSize) fileSize.textContent = '';
+    if (fileInfo) fileInfo.classList.add('d-none');
+    
+    // Reset button
+    if (analyzeBtn) analyzeBtn.disabled = true;
+    
+    // Hide results
+    if (resultsSection) resultsSection.classList.add('d-none');
+    
+    // Clear waveform
+    this.clearWaveform();
+    
+    this.audioBuffer = null;
+    
+    console.log('🗑️ File cleared');
+}
+
+clearWaveform() {
+    const canvas = document.getElementById('waveformCanvas');
+    if (canvas) {
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        document.getElementById('resultsSection').classList.add('d-none');
+        
+        // Draw a blank state
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#666';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = '14px Arial';
+        ctx.fillText('No audio loaded', canvas.width / 2, canvas.height / 2);
     }
+}
 
     async loadAudioFile(file) {
         try {
@@ -79,8 +141,8 @@ class DroneAnalyzer {
             this.audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
             this.drawWaveform();
         } catch (err) {
-            console.error(err);
-            alert('Error loading audio file.');
+            console.error('Error loading audio file:', err);
+            alert('Error loading audio file. Please try another file.');
         }
     }
 
@@ -109,58 +171,289 @@ class DroneAnalyzer {
         }
         ctx.stroke();
     }
+   async analyzeDroneSound() {
+    console.log('🎯 analyzeDroneSound method called');
+    
+    // Check if we have a file
+    const fileInput = document.getElementById('audioFile');
+    if (!fileInput || !fileInput.files || !fileInput.files.length) {
+        console.error('❌ No file selected');
+        alert('Please upload a file first');
+        return;
+    }
 
-    async analyzeDroneSound() {
-        if (!this.audioBuffer) return alert('Please upload a file first');
-        if (this.isAnalyzing) return;
+    const file = fileInput.files[0];
+    console.log('📁 Selected file:', file.name, 'Size:', file.size, 'Type:', file.type);
 
-        this.isAnalyzing = true;
-        const btn = document.getElementById('analyzeBtn');
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Analyzing...';
-        btn.disabled = true;
+    // Prevent multiple analyses
+    if (this.isAnalyzing) {
+        console.log('⚠️ Already analyzing, skipping...');
+        return;
+    }
 
-        const file = document.getElementById('audioFile').files[0];
+    this.isAnalyzing = true;
+    const btn = document.getElementById('analyzeBtn');
+    const originalText = btn.innerHTML;
+    
+    // Update UI
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Analyzing...';
+    btn.disabled = true;
+    console.log('🔄 Button state updated - disabled with spinner');
+
+    try {
+        console.log('📤 Preparing to send request to /predict...');
+        
         const formData = new FormData();
         formData.append('file', file);
 
-        try {
-            const res = await fetch('http://127.0.0.1:5000/classify', {
-                method: 'POST',
-                body: formData
-            });
-            
-            if (!res.ok) {
-                throw new Error(`Server returned ${res.status}: ${res.statusText}`);
-            }
-            
-            const data = await res.json();
-            this.displayResults(data);
-        } catch (err) {
-            console.error('Drone analysis error:', err);
-            alert('Error during drone sound analysis. Please check the console for details.');
-        } finally {
-            this.isAnalyzing = false;
-            btn.innerHTML = '<i class="bi-play-circle me-2"></i>Analyze Drone Sound';
-            btn.disabled = false;
+        // Add timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+            console.log('⏰ Request timeout after 30 seconds');
+            controller.abort();
+        }, 30000);
+
+        console.log('🚀 Sending fetch request...');
+        const response = await fetch('http://127.0.0.1:5000/predict', {
+            method: 'POST',
+            body: formData,
+            signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+        console.log('📥 Response received. Status:', response.status);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Server returned error:', response.status, errorText);
+            throw new Error(`Server error ${response.status}: ${errorText}`);
         }
-    }
 
-    displayResults(data) {
-        document.getElementById('resultsSection').classList.remove('d-none');
-        document.getElementById('classificationResult').innerHTML = `
-            <div class="alert alert-info">
-                <h6>${data.label}</h6>
-                <p>Confidence: ${(data.confidence*100).toFixed(1)}%</p>
-            </div>
-        `;
-    }
+        // Parse the response
+        const data = await response.json();
+        console.log('✅ Received JSON data:', data);
 
-    setupWaveformCanvas() {
-        const canvas = document.getElementById('waveformCanvas');
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
+        // IMPORTANT: Call displayResults with the data
+        console.log('🎯 Calling displayResults...');
+        this.displayResults(data);
+
+    } catch (error) {
+        console.error('❌ Analysis failed:', error);
+        
+        let userMessage = 'Analysis failed: ';
+        if (error.name === 'AbortError') {
+            userMessage += 'Request timeout (30 seconds)';
+        } else if (error.message.includes('Failed to fetch')) {
+            userMessage += 'Cannot connect to server. Check if Flask is running.';
+        } else {
+            userMessage += error.message;
+        }
+        
+        // Display error in the results section
+        this.displayError(userMessage);
+        
+    } finally {
+        // CRITICAL: Always reset button state
+        console.log('🔄 Resetting button state');
+        this.isAnalyzing = false;
+        btn.innerHTML = originalText;
+        btn.disabled = false;
     }
 }
+displayResults(data) {
+    console.log('🎯 displayResults called with data:', data);
+    
+    try {
+        const resultsSection = document.getElementById('resultsSection');
+        const classificationResult = document.getElementById('classificationResult');
+        const detailedAnalysis = document.getElementById('detailedAnalysis');
+        
+        console.log('🔍 DOM elements found:', {
+            resultsSection: !!resultsSection,
+            classificationResult: !!classificationResult,
+            detailedAnalysis: !!detailedAnalysis
+        });
+        
+        if (!resultsSection || !classificationResult) {
+            throw new Error('Required DOM elements not found');
+        }
+
+        // Extract data with fallbacks
+        const prediction = data.prediction || 'Unknown';
+        const confidence = data.confidence || 0;
+        const confidenceDisplay = (confidence * 100).toFixed(1) + '%';
+        
+        console.log('📊 Displaying results:', { prediction, confidence: confidenceDisplay });
+
+        // Build classification result HTML
+        const classificationHTML = `
+            <div class="alert alert-success mb-3">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="alert-heading mb-2">🎯 Classification Complete</h6>
+                        <div class="mb-2">
+                            <strong>Prediction:</strong>
+                            <span class="badge bg-primary ms-2 fs-6">${prediction}</span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Confidence:</strong>
+                            <span class="badge bg-info ms-2 fs-6">${confidenceDisplay}</span>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-success">✓ Analyzed</span>
+                    </div>
+                </div>
+                ${data.timestamp ? `
+                    <hr class="my-2">
+                    <div class="small text-muted">
+                        <strong>Processed:</strong> ${new Date(data.timestamp).toLocaleString()}
+                    </div>
+                ` : ''}
+            </div>
+        `;
+
+        // Build detailed analysis HTML
+        const detailedHTML = `
+            <div class="analysis-details">
+                <h6>Analysis Information</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul class="list-unstyled">
+                            <li><strong>Model:</strong> Drone Audio Classifier</li>
+                            <li><strong>Status:</strong> Completed</li>
+                            ${data.message ? `<li><strong>Message:</strong> ${data.message}</li>` : ''}
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        ${data.all_probabilities ? `
+                            <h6>All Probabilities:</h6>
+                            <div class="small">
+                                ${Object.entries(data.all_probabilities)
+                                    .map(([className, prob]) => 
+                                        `<div class="d-flex justify-content-between">
+                                            <span>${className}:</span>
+                                            <span>${(prob * 100).toFixed(2)}%</span>
+                                        </div>`
+                                    ).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Update the DOM
+        classificationResult.innerHTML = classificationHTML;
+        if (detailedAnalysis) {
+            detailedAnalysis.innerHTML = detailedHTML;
+        }
+        
+        // Show results section with animation
+        resultsSection.classList.remove('d-none');
+        resultsSection.style.opacity = '0';
+        resultsSection.style.transform = 'translateY(20px)';
+        
+        // Animate in
+        setTimeout(() => {
+            resultsSection.style.transition = 'all 0.3s ease';
+            resultsSection.style.opacity = '1';
+            resultsSection.style.transform = 'translateY(0)';
+        }, 50);
+
+        console.log('✅ Results displayed successfully');
+
+    } catch (error) {
+        console.error('❌ Error in displayResults:', error);
+        this.displayError('Failed to display results: ' + error.message);
+    }
+}
+displayError(message) {
+    console.log('🔄 Displaying error:', message);
+    
+    const resultsSection = document.getElementById('resultsSection');
+    const classificationResult = document.getElementById('classificationResult');
+    
+    if (resultsSection && classificationResult) {
+        // Show the results section
+        resultsSection.classList.remove('d-none');
+        
+        // Display error in the classification result area
+        classificationResult.innerHTML = `
+            <div class="alert alert-danger">
+                <h6>❌ Analysis Failed</h6>
+                <p class="mb-0">${message}</p>
+                <hr>
+                <small class="text-muted">Please check the console for more details.</small>
+            </div>
+        `;
+        
+        console.log('✅ Error message displayed in results section');
+    }
+}
+    setupWaveformCanvas() {
+            const canvas = document.getElementById('waveformCanvas');
+            if (canvas) {
+                canvas.width = canvas.offsetWidth;
+                canvas.height = canvas.offsetHeight;
+            }
+        }
+    
+        checkHTMLStructure() {
+    console.log('🔍 Checking HTML structure...');
+    
+    const elements = [
+        'analyzeBtn',
+        'resultsSection', 
+        'classificationResult',
+        'audioFile',
+        'fileName',
+        'fileSize'
+    ];
+    
+    elements.forEach(id => {
+        const element = document.getElementById(id);
+        console.log(`📋 ${id}:`, element ? 'FOUND' : 'NOT FOUND', element);
+    });   
+}
+
+// Add this to your DroneAnalyzer class
+debugElements() {
+    console.log('🔍 Debugging HTML elements...');
+    
+    const elements = {
+        'resultsSection': document.getElementById('resultsSection'),
+        'classificationResult': document.getElementById('classificationResult'),
+        'waveformCanvas': document.getElementById('waveformCanvas'),
+        'detailedAnalysis': document.getElementById('detailedAnalysis')
+    };
+    
+    Object.entries(elements).forEach(([name, element]) => {
+        if (element) {
+            console.log(`✅ ${name}:`, {
+                exists: true,
+                classes: element.className,
+                parent: element.parentElement ? element.parentElement.id : 'no parent ID',
+                children: element.children.length
+            });
+        } else {
+            console.log(`❌ ${name}: NOT FOUND`);
+        }
+    });
+    
+    // Test if we can modify the classificationResult
+    const testElement = document.getElementById('classificationResult');
+    if (testElement) {
+        const testContent = document.createElement('div');
+        testContent.className = 'alert alert-warning';
+        testContent.innerHTML = '<strong>TEST:</strong> If you see this, element targeting works!';
+        testElement.appendChild(testContent);
+        console.log('🧪 Test content added to classificationResult');
+    }
+}
+
+
+   }
 
 class SARAnalyzer {
     constructor() {
@@ -176,6 +469,7 @@ class SARAnalyzer {
     bindEvents() {
         const fileInput = document.getElementById('sarImageFile');
         const uploadArea = document.getElementById('sarUploadArea');
+        const analyzeBtn = document.getElementById('analyzeSarBtn');
 
         if (!fileInput || !uploadArea) {
             console.warn('SAR analysis elements not found in the DOM');
@@ -183,6 +477,12 @@ class SARAnalyzer {
         }
 
         fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
+        
+        // Prevent form submission
+        analyzeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.analyzeSarImage();
+        });
 
         // Drag & Drop for SAR image
         uploadArea.addEventListener('dragover', (e) => {
@@ -197,6 +497,7 @@ class SARAnalyzer {
 
         uploadArea.addEventListener('drop', (e) => {
             e.preventDefault();
+            uploadArea.style.borderColor = '#dee2e6';
             if (e.dataTransfer.files.length) {
                 fileInput.files = e.dataTransfer.files;
                 this.handleFileSelect(e);
@@ -232,12 +533,9 @@ class SARAnalyzer {
         const previewImage = document.getElementById('previewImage');
         
         if (isTiff) {
-            // For TIFF files, show a placeholder and convert to PNG for preview
-            previewImage.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzY2NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPlRJRiBGaWxlPC90ZXh0Pjx0ZXh0IHg9IjUwJSIgeT0iNjAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj4kew            fileLm5hbWV9PC90ZXh0Pjwvc3ZnPg==';
+            // For TIFF files, show a placeholder
+            previewImage.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzY2NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPlRJRiBGaWxlPC90ZXh0Pjx0ZXh0IHg9IjUwJSIgeT0iNjAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj4ke2ZpbGUubmFtZX08L3RleHQ+PC9zdmc+';
             previewContainer.classList.remove('d-none');
-            
-            // Optionally, you can send the TIFF to the backend for conversion and preview
-            // this.convertTiffForPreview(file);
         } else {
             // For regular image files, use FileReader for preview
             const reader = new FileReader();
@@ -246,26 +544,6 @@ class SARAnalyzer {
                 previewContainer.classList.remove('d-none');
             };
             reader.readAsDataURL(file);
-        }
-    }
-
-    // Optional: Convert TIFF to PNG for preview using the backend
-    async convertTiffForPreview(file) {
-        try {
-            const formData = new FormData();
-            formData.append('file', file);
-            
-            const res = await fetch('http://127.0.0.1:5000/sar/convert', {
-                method: 'POST',
-                body: formData
-            });
-            
-            if (res.ok) {
-                const data = await res.json();
-                document.getElementById('previewImage').src = data.converted_image;
-            }
-        } catch (err) {
-            console.error('Error converting TIFF for preview:', err);
         }
     }
 
@@ -284,6 +562,7 @@ class SARAnalyzer {
 
         this.isAnalyzing = true;
         const btn = document.getElementById('analyzeSarBtn');
+        const originalText = btn.innerHTML;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Analyzing...';
         btn.disabled = true;
 
@@ -291,7 +570,6 @@ class SARAnalyzer {
         formData.append('file', this.sarImage);
 
         try {
-            // Send to backend for processing
             const res = await fetch('http://127.0.0.1:5000/sar/analyze', {
                 method: 'POST',
                 body: formData
@@ -305,10 +583,10 @@ class SARAnalyzer {
             this.displaySarResults(data);
         } catch (err) {
             console.error('SAR analysis error:', err);
-            alert('Error during SAR analysis. Please check the console for details.');
+            alert('Error during SAR analysis: ' + err.message);
         } finally {
             this.isAnalyzing = false;
-            btn.innerHTML = '<i class="bi-gear me-2"></i>Analyze SAR Image';
+            btn.innerHTML = originalText;
             btn.disabled = false;
         }
     }
@@ -322,7 +600,6 @@ class SARAnalyzer {
 
         resultsSection.classList.remove('d-none');
         
-        // Display the uploaded image and the generated plot
         if (data.original_image) {
             const result1Element = document.getElementById('sarResult1');
             if (result1Element) {
@@ -345,7 +622,6 @@ class SARAnalyzer {
             }
         }
         
-        // Display analysis details if available
         if (data.analysis) {
             const analysisDetails = document.getElementById('sarAnalysisDetails');
             if (analysisDetails) {
@@ -373,15 +649,6 @@ class SARAnalyzer {
                     </div>
                 `;
             }
-        } else {
-            // Fallback if no analysis data
-            const analysisDetails = document.getElementById('sarAnalysisDetails');
-            if (analysisDetails) {
-                analysisDetails.innerHTML = `
-                    <p>SAR image analysis completed. The plot shows the intensity distribution and histogram of the SAR data.</p>
-                    <p><strong>File:</strong> ${this.sarImage.name}</p>
-                `;
-            }
         }
     }
 }
@@ -390,13 +657,11 @@ class SARAnalyzer {
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize Drone Analyzer
     const droneAnalyzer = new DroneAnalyzer();
-    window.analyzeDroneSound = () => droneAnalyzer.analyzeDroneSound();
-    window.clearFile = () => droneAnalyzer.clearFile();
+    window.droneAnalyzer = droneAnalyzer; // Make it globally available for debugging
     
     // Initialize SAR Analyzer
     const sarAnalyzer = new SARAnalyzer();
-    window.analyzeSarImage = () => sarAnalyzer.analyzeSarImage();
-    window.clearSarFile = () => sarAnalyzer.clearSarFile();
+    window.sarAnalyzer = sarAnalyzer; // Make it globally available for debugging
     
     console.log('DeepSignal analyzers initialized successfully');
 });
