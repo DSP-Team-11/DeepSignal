@@ -532,6 +532,11 @@ def analyze_ecg():
         file = request.files["file"]
         df = pd.read_csv(file, header=0)
 
+         # Get undersampling parameters from frontend
+        original_sampling_rate = int(request.form.get("original_sr", 250))
+        target_sampling_rate = int(request.form.get("target_sr", 250))
+        exaggerate_effects = request.form.get("exaggerate_effects", "false").lower() == "true"
+
         # Normalize column names
         df.columns = [c.strip().upper() for c in df.columns]
         expected_leads = ["I","II","III","AVR","AVL","AVF","V1","V2","V3","V4","V5","V6"]
@@ -547,6 +552,11 @@ def analyze_ecg():
 
         # Convert to numpy
         ecg_array = df.to_numpy().astype(np.float32)
+
+        # Apply undersampling if requested
+        if target_sampling_rate < original_sampling_rate:
+            print(f"🔄 Applying undersampling: {original_sampling_rate}Hz → {target_sampling_rate}Hz")
+            ecg_array = apply_ecg_undersampling(ecg_array, original_sampling_rate, target_sampling_rate, exaggerate_effects)
 
         # Pad or truncate to 4096 samples
         if ecg_array.shape[0] < 4096:
@@ -572,16 +582,144 @@ def analyze_ecg():
             normal_abnormal = "Abnormal"
 
         best_index = int(np.argmax(probs[0]))
+        original_confidence = float(probs[0][best_index])
+        
+        # Calculate aliasing impact on classification confidence
+        aliasing_impact = calculate_aliasing_impact(target_sampling_rate)
+        adjusted_confidence = adjust_confidence_for_aliasing(original_confidence, aliasing_impact)
+        
+        print(f"📊 Classification - Original: {original_confidence:.3f}, Adjusted: {adjusted_confidence:.3f}")
+        print(f"📊 Aliasing Impact: {aliasing_impact['level']} (risk: {aliasing_impact['risk']})")
 
         return jsonify({
             "normal_abnormal": normal_abnormal,
             "best_class": ecg_labels[best_index],
             "best_prob": float(probs[0][best_index]),
-            "all_probabilities": {ecg_labels[i]: float(probs[0][i]) for i in range(len(ecg_labels))}
-        })
+            "adjusted_confidence": adjusted_confidence,
+            "aliasing_impact": aliasing_impact,
+            "all_probabilities": {ecg_labels[i]: float(probs[0][i]) for i in range(len(ecg_labels))},
+            "sampling_info": {
+                "original_sr": original_sampling_rate,
+                "target_sr": target_sampling_rate,
+                "undersampled": target_sampling_rate < original_sampling_rate
+                }
+            })
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+def apply_ecg_undersampling(ecg_signal, original_sr, target_sr, exaggerate=False):
+    """
+    Apply undersampling to ECG signal with optional exaggerated effects
+    """
+    downsampling_factor = original_sr / target_sr
+    
+    if downsampling_factor <= 1:
+        return ecg_signal  # No undersampling needed
+    
+    processed_signal = []
+    
+    if exaggerate and target_sr < 50:
+        # EXAGGERATED EFFECTS: Make aliasing much more obvious
+        print("🎭 Applying exaggerated undersampling effects")
+        
+        for i in range(0, len(ecg_signal), int(downsampling_factor)):
+            original_index = min(i, len(ecg_signal) - 1)
+            sample = ecg_signal[original_index].copy()
+            
+            # Add dramatic aliasing effects based on sampling rate
+            if target_sr < 30:
+                # CRITICAL ALIASING: Severe distortion
+                for ch in range(sample.shape[0]):
+                    # Add high-frequency noise that aliases down
+                    high_freq_noise = np.sin(i * 2) * 0.2
+                    medium_freq_noise = np.cos(i * 1.5) * 0.15
+                    random_noise = (np.random.random() - 0.5) * 0.1
+                    
+                    sample[ch] += high_freq_noise + medium_freq_noise + random_noise
+            elif target_sr < 50:
+                # SEVERE ALIASING: Moderate distortion
+                for ch in range(sample.shape[0]):
+                    alias_noise = np.sin(i * 1.2) * 0.15
+                    random_noise = (np.random.random() - 0.5) * 0.05
+                    sample[ch] += alias_noise + random_noise
+            elif target_sr < 100:
+                # MILD ALIASING: Subtle distortion
+                for ch in range(sample.shape[0]):
+                    subtle_noise = np.sin(i * 0.8) * 0.08
+                    sample[ch] += subtle_noise
+            
+            processed_signal.append(sample)
+    else:
+        # NORMAL EFFECTS: Simple decimation only
+        print("📊 Applying normal undersampling (simple decimation)")
+        for i in range(0, len(ecg_signal), int(downsampling_factor)):
+            processed_signal.append(ecg_signal[min(i, len(ecg_signal) - 1)])
+    
+    processed_signal = np.array(processed_signal)
+    print(f"📊 Undersampling applied: {len(ecg_signal)} → {len(processed_signal)} samples")
+    return processed_signal
+
+def calculate_aliasing_impact(sampling_rate):
+    """
+    Calculate the impact of aliasing on classification reliability
+    """
+    nyquist_freq = sampling_rate / 2
+    ecg_bandwidth = 40  # Typical ECG bandwidth in Hz
+    
+    if nyquist_freq < 15:
+        return {
+            "level": "critical",
+            "confidence_reduction": 0.7,  # 70% reduction in confidence
+            "risk": "Very High",
+            "effect": "Complete waveform distortion",
+            "false_negatives": ["Ventricular Tachycardia", "Bundle Branch Blocks", "All high-frequency abnormalities"],
+            "false_positives": ["Artifactual PVCs", "False ST elevation", "Pseudodepolarization"]
+        }
+    elif nyquist_freq < 25:
+        return {
+            "level": "severe",
+            "confidence_reduction": 0.5,  # 50% reduction
+            "risk": "High",
+            "effect": "Major features lost",
+            "false_negatives": ["Atrial Flutter", "RBBB/LBBB", "P-wave abnormalities"],
+            "false_positives": ["False ischemia", "Artifactual notching", "Pseudobradycardia"]
+        }
+    elif nyquist_freq < ecg_bandwidth:
+        return {
+            "level": "moderate",
+            "confidence_reduction": 0.3,  # 30% reduction
+            "risk": "Medium",
+            "effect": "High-frequency details lost",
+            "false_negatives": ["Subtle ST changes", "Early repolarization", "P-wave morphology"],
+            "false_positives": ["Minor ST artifacting", "False axis deviation", "Pseudoarrhythmia"]
+        }
+    elif nyquist_freq < 100:
+        return {
+            "level": "mild",
+            "confidence_reduction": 0.1,  # 10% reduction
+            "risk": "Low",
+            "effect": "Minor distortions",
+            "false_negatives": ["Very subtle abnormalities", "Minor conduction defects"],
+            "false_positives": ["Minimal artifacting", "Borderline case errors"]
+        }
+    else:
+        return {
+            "level": "minimal",
+            "confidence_reduction": 0.0,  # No reduction
+            "risk": "Very Low",
+            "effect": "Reliable classification",
+            "false_negatives": ["None expected"],
+            "false_positives": ["None expected"]
+        }
+
+def adjust_confidence_for_aliasing(original_confidence, aliasing_impact):
+    """
+    Adjust classification confidence based on aliasing impact
+    """
+    reduction = aliasing_impact["confidence_reduction"]
+    adjusted = original_confidence * (1 - reduction)
+    return max(0.0, min(1.0, adjusted))  # Clamp between 0 and 1
 
 # =============================================================================
 # EEG Analysis Endpoints

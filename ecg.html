@@ -114,13 +114,77 @@
                                                 </div>
                                             </div>
                                         </div>
+
+                                        <!-- Separator -->
+                                        <hr class="my-5">
+
+
+                                        <!-- Aliasing Controls - MOVED HERE under the signal canvas -->
+                                        <div class="mt-4 pt-5 border-top">
+                                            <div class="row justify-content-center">
+                                                <div class="col-lg-12 col-md-10 col-12">
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <h5 class="card-title">Aliasing Simulation</h5>
+                                                            <div class="alert alert-warning small mb-3">
+                                                                <i class="bi-exclamation-triangle me-1"></i>
+                                                                <strong>Warning:</strong> Reducing sampling rate causes aliasing that can mislead AI classification
+                                                            </div>
+                                                            
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-medium">Sampling Rate: <span id="sampling-rate-value" class="badge bg-primary ms-2">250 Hz</span></label>
+                                                                <input id="sampling-rate" class="form-range" type="range" min="10" max="500" step="10" value="250">
+                                                                
+                                                                <div class="d-flex justify-content-between mt-1">
+                                                                    <small class="text-muted">Nyquist: <span id="nyquist-freq" class="fw-bold">125 Hz</span></small>
+                                                                    <small class="text-muted">ECG Bandwidth: ~40 Hz</small>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div class="row mb-3">
+                                                                <div class="col-md-6">
+                                                                    <div class="form-check form-switch">
+                                                                        <input class="form-check-input" type="checkbox" id="show-nyquist" checked>
+                                                                        <label class="form-check-label small" for="show-nyquist">
+                                                                            Show Nyquist Guide
+                                                                        </label>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-6">
+                                                                    <div class="form-check form-switch">
+                                                                        <input class="form-check-input" type="checkbox" id="exaggerate-effects" checked>
+                                                                        <label class="form-check-label small" for="exaggerate-effects">
+                                                                            Exaggerate Effects
+                                                                        </label>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div class="d-flex gap-2">
+                                                                <button id="apply-aliasing" class="btn btn-outline-warning btn-sm flex-fill">
+                                                                    <i class="bi-lightning-charge me-1"></i>Apply Aliasing
+                                                                </button>
+                                                                <button id="reset-aliasing" class="btn btn-outline-secondary btn-sm">
+                                                                    <i class="bi-arrow-clockwise me-1"></i>Reset
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Dynamic warning will appear here -->
+                                                    <div id="aliasing-warning" class="mt-3"></div>
+                                                </div>
+                                            </div>
+                                        </div>
                                         
                                     </div>
+
+                                    
                                     
                                     <div class="col-lg-3 col-12">
                                         <div class="control-panel">
                                             <h5 class="mb-3">ECG Controls</h5>
-                                             <div class="mb-4">
+                                            <div class="mb-4">
                                             <h6>Signal Data</h6>
                                             <div class="upload-container">
                                                 <input type="file" id="signal-upload" accept=".edf,.csv,.txt,.mat,.dat" hidden>

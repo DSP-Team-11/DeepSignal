@@ -12,7 +12,7 @@
     background: white;
     border: 1px solid #dee2e6;
     border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(240, 30, 30, 0.1);
 }
 
 .control-panel {
@@ -218,6 +218,130 @@
     padding: 0.25rem 0.5rem;
 }
 
+/* Aliasing Controls Styling */
+.aliasing-controls {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6 !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.aliasing-controls h5 {
+    color: #2c3e50;
+    border-bottom: 2px solid #f39c12;
+    padding-bottom: 8px;
+}
+
+/* Signal Canvas Styling */
+.signal-canvas {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    min-height: 500px;
+    position: relative;
+    margin-bottom: 0;
+}
+
+/* Form Range Styling */
+.form-range {
+    accent-color: #3498db;
+    height: 30px;
+}
+
+.form-range:focus {
+    accent-color: #2980b9;
+}
+
+/* Badge Styling in Aliasing Controls */
+.aliasing-controls .badge {
+    font-size: 0.8rem;
+    padding: 6px 10px;
+}
+
+/* Alert Styling */
+.alert-warning {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border: 1px solid #ffc107;
+    color: #856404;
+}
+
+/* Button Styling */
+.btn-outline-warning {
+    border: 2px solid #f39c12;
+    color: #f39c12;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-warning:hover {
+    background-color: #f39c12;
+    border-color: #f39c12;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(243, 156, 18, 0.3);
+}
+
+/* Control Panel Styling */
+.control-panel {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    height: fit-content;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .aliasing-controls .row > div {
+        margin-bottom: 15px;
+    }
+    
+    .aliasing-controls .d-grid {
+        gap: 10px !important;
+    }
+}
+
+/* Animation for aliasing effects */
+@keyframes pulse-warning {
+    0% { box-shadow: 0 0 0 0 rgba(243, 156, 18, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(243, 156, 18, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(243, 156, 18, 0); }
+}
+
+.aliasing-active {
+    animation: pulse-warning 2s infinite;
+}
+
+
+/* Quick fix for overlapping elements */
+#aliasing-warning {
+  position: relative !important;
+  z-index: 1000 !important;
+  margin-bottom: 1rem !important;
+  margin-top: 1rem !important;
+}
+
+#analysis-result {
+  position: relative !important;
+  z-index: 900 !important;
+  margin-bottom: 1rem !important;
+}
+
+#signal-canvas > div {
+  position: relative !important;
+  z-index: 800 !important;
+}
+
+#ecg-canvas {
+  position: relative !important;
+  z-index: 700 !important;
+}
+
+/* Ensure the signal canvas container has proper spacing */
+.signal-canvas-container {
+  padding-top: 1rem;
+  min-height: 600px;
+}
 
 }
 
