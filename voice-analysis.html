@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Voice Analysis - DeepSignal</title>
+
+    <!-- CSS FILES -->        
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Open+Sans&display=swap" rel="stylesheet">
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/bootstrap-icons.css" rel="stylesheet">
+        <link href="css/templatemo-topic-listing.css" rel="stylesheet">
+        <link href="css/medical-signals.css" rel="stylesheet">
+    
+    <style>
+        .analysis-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .upload-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 40px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            background-color: #f8f9fa;
+            cursor: pointer;
+        }
+        
+        .upload-area:hover {
+            border-color: #2C6BED;
+            background-color: #f0f5ff;
+        }
+        
+        .result-card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2C6BED;
+        }
+        
+        .gender-badge {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        
+        .gender-male {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .gender-female {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .btn-custom {
+            background-color: #2C6BED;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+        
+        .confidence-meter {
+            height: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+        
+        .confidence-male {
+            background-color: #0c5460;
+        }
+        
+        .confidence-female {
+            background-color: #721c24;
+        }
+        
+        .processing-step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+        
+        .step-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #2C6BED;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+    
+<body id="top">
+    <main>
+        <nav class="navbar navbar-expand-lg">
+            <div class="container">
+                <a class="navbar-brand" href="index.html">
+                    <i class="bi-activity"></i>
+                    <span>DeepSignal</span>
+                </a>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-lg-5 me-lg-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="index.html">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="acoustic-signals.html">Acoustic Signals</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Applications
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="medical-signals.html">Medical Signals</a></li>
+                                <li><a class="dropdown-item" href="acoustic-signals.html">Acoustic Signals</a></li>
+                                <li><a class="dropdown-item" href="voice-analysis.html">Voice Analysis</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        
+        <header class="site-header d-flex flex-column justify-content-center align-items-center text-center">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8 col-12">
+                        <h2 class="text-white display-4 fw-bold">Voice Analysis Studio</h2>
+                        <p class="text-white mt-3 fs-5">
+                            Advanced Voice Signal Processing: Gender Detection, Downsampling, and Anti-Aliasing
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <section class="section-padding">
+            <div class="container">
+                
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="analysis-container">
+                            <h4 class="mb-4">Upload Voice Sample</h4>
+                            
+                            <div class="upload-area" id="uploadArea">
+                                <i class="bi bi-mic"></i>
+                                <h5>Drag & Drop Voice File Here</h5>
+                                <p class="text-muted">Supported formats: WAV, MP3, FLAC (1-5 seconds recommended)</p>
+                                <button class="btn btn-custom mt-2" id="selectFileBtn">Select File</button>
+                                <input type="file" id="fileInput" accept="audio/*" style="display: none;">
+                            </div>
+                            
+                            <div class="mt-4 file-info" id="fileInfo">
+                                <h5>Selected File</h5>
+                                <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                    <div>
+                                        <i class="bi bi-file-earmark-music me-2"></i>
+                                        <span id="fileName">sample_voice.wav</span>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-danger" id="removeFile">Remove</button>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4" id="audioPlayerContainer" style="display: none;">
+                                <h5>Voice Sample</h5>
+                                <audio controls class="w-100" id="originalAudio">
+                                    Your browser does not support the audio element.
+                                </audio>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <button class="btn btn-custom w-100" id="analyzeBtn" disabled>
+                                    Analyze Voice Gender with AI
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="analysis-container results-section" id="resultsSection">
+                            <h4 class="mb-4">AI Classification Results</h4>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="result-card">
+                                        <h6>Gender Classification</h6>
+                                        <div class="mt-3 text-center">
+                                            <span class="gender-badge gender-male" id="genderResult" style="display: none;">Male</span>
+                                            <span class="gender-badge gender-female" id="genderResultFemale" style="display: none;">Female</span>
+                                        </div>
+                                        <div class="confidence-meter mt-3">
+                                            <div class="confidence-fill confidence-male" id="confidenceBar" style="width: 0%"></div>
+                                        </div>
+                                        <p class="mt-2 mb-0 text-center text-muted">AI Confidence: <span id="confidenceValue">0%</span></p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="result-card">
+                                        <h6>Audio Analysis</h6>
+                                        <div id="audioFeatures">
+                                            <p class="text-muted">AI analysis in progress...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <h6>Processing Pipeline</h6>
+                                <div class="processing-step">
+                                    <div class="step-icon">1</div>
+                                    <div>
+                                        <h6 class="mb-1">Gender Classification</h6>
+                                        <p class="mb-0 text-muted">Analyze voice characteristics using pre-trained model</p>
+                                    </div>
+                                </div>
+                                <div class="processing-step">
+                                    <div class="step-icon">2</div>
+                                    <div>
+                                        <h6 class="mb-1">Downsampling & Aliasing</h6>
+                                        <p class="mb-0 text-muted">Apply undersampling to create aliasing effects</p>
+                                    </div>
+                                </div>
+                                <div class="processing-step">
+                                    <div class="step-icon">3</div>
+                                    <div>
+                                        <h6 class="mb-1">Anti-aliasing Recovery</h6>
+                                        <p class="mb-0 text-muted">Use filters to restore original voice quality</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <div class="d-flex justify-content-between">
+                                    <button class="btn btn-outline-secondary" id="resetAnalysis">Analyze Another Voice</button>
+                                    <button class="btn btn-custom" id="nextStepBtn" disabled>Continue to Next Step</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4">
+                        <div class="analysis-container">
+                            <h4 class="mb-4">API Status</h4>
+                            <div class="mb-3">
+                                <label class="form-label">Model Status</label>
+                                <div class="p-3 bg-light rounded">
+                                    <p class="mb-0" id="modelStatus">Checking connection...</p>
+                                </div>
+                            </div>
+                            
+                            
+                            <div class="mb-3">
+                                <label class="form-label">File Information</label>
+                                <div class="p-3 bg-light rounded">
+                                    <p class="mb-1"><strong>Duration:</strong> <span id="fileDuration">--:--</span></p>
+                                    <p class="mb-1"><strong>Status:</strong> <span id="fileStatus">No file selected</span></p>
+                                    <p class="mb-0"><strong>Model Type:</strong> <span id="modelType">Pre-trained Classifier</span></p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    
+   <!-- JAVASCRIPT FILES -->
+        <script src="js/jquery.min.js"></script>
+        <script src="js/bootstrap.bundle.min.js"></script>
+        <script src="js/jquery.sticky.js"></script>
+        <script src="js/custom.js"></script>
+        <script src="js/voice-analysis.js"></script>
+        
+</body>
+</html>
+
+
+
