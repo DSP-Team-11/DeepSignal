@@ -30,6 +30,11 @@ import threading
 import os
 from transformers import AutoProcessor, AutoModelForAudioClassification
 
+from voice_model import ECAPA_gender
+import torch.nn.functional as F
+from typing import Optional
+    
+
 
 # Import your model functions
 try:
@@ -417,6 +422,136 @@ def analyze_sar_image(image_path, is_tiff=True):
         raise Exception(f"Error in SAR analysis: {str(e)}")
 
 # =============================================================================
+# Voice Gender Classification - ECAPA-TDNN Integration
+# =============================================================================
+
+# Load Voice Gender Classification Model
+try:
+    # Load the model
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    voice_model = ECAPA_gender(C=1024)
+    
+    # Load the trained weights
+    model_path = "gender_classifier.model"
+    if os.path.exists(model_path):
+        voice_model.load_state_dict(torch.load(model_path, map_location=device))
+        voice_model.to(device)
+        voice_model.eval()
+        print("✅ ECAPA-TDNN Voice Gender Classification Model loaded successfully")
+        print(f"✅ Model device: {device}")
+    else:
+        print(f"❌ Model file not found: {model_path}")
+        voice_model = None
+        
+except Exception as e:
+    print(f"❌ Error loading voice gender model: {e}")
+    traceback.print_exc()
+    voice_model = None
+
+def preprocess_audio_for_ecapa(audio_path, target_sr=16000, duration=3.0):
+    """Preprocess audio for ECAPA-TDNN model"""
+    try:
+        print(f"🔄 Preprocessing audio: {audio_path}")
+        
+        # Load audio using torchaudio (matching your model's load_audio method)
+        audio, sr = torchaudio.load(audio_path)
+        print(f"✅ Audio loaded - original shape: {audio.shape}, sample rate: {sr}")
+        
+        # Resample if necessary
+        if sr != target_sr:
+            print(f"🔄 Resampling from {sr}Hz to {target_sr}Hz")
+            resampler = torchaudio.transforms.Resample(orig_freq=sr, new_freq=target_sr)
+            audio = resampler(audio)
+        
+        # Convert to mono
+        if audio.shape[0] > 1:
+            print("🔄 Converting stereo to mono")
+            audio = audio.mean(dim=0, keepdim=True)
+        
+        # Ensure minimum length
+        min_samples = int(target_sr * 1.0)  # At least 1 second
+        current_samples = audio.shape[1]
+        print(f"📊 Current samples: {current_samples}, Min required: {min_samples}")
+        
+        if current_samples < min_samples:
+            # Pad with zeros
+            padding = min_samples - current_samples
+            print(f"🔄 Padding audio with {padding} zeros")
+            audio = torch.nn.functional.pad(audio, (0, padding))
+        else:
+            # Take first 3 seconds
+            max_samples = int(target_sr * duration)
+            if current_samples > max_samples:
+                print(f"🔄 Truncating audio to {max_samples} samples ({duration}s)")
+                audio = audio[:, :max_samples]
+        
+        print(f"✅ Final audio shape: {audio.shape}")
+        return audio
+        
+    except Exception as e:
+        print(f"❌ Audio preprocessing failed: {str(e)}")
+        traceback.print_exc()
+        raise Exception(f"Audio preprocessing failed: {str(e)}")
+    
+def predict_voice_gender_ecapa(audio_path):
+    """Predict voice gender using ECAPA-TDNN model"""
+    try:
+        if voice_model is None:
+            raise Exception("Voice model not loaded")
+        
+        print(f"🎯 Starting voice prediction for: {audio_path}")
+        
+        # Preprocess audio
+        audio_tensor = preprocess_audio_for_ecapa(audio_path)
+        print(f"✅ Audio preprocessed - shape: {audio_tensor.shape}")
+        
+        # Move to appropriate device
+        audio_tensor = audio_tensor.to(device)
+        print(f"✅ Audio moved to device: {device}")
+        
+        # Run inference
+        with torch.no_grad():
+            print("🧠 Running model inference...")
+            outputs = voice_model(audio_tensor)
+            print(f"✅ Model output shape: {outputs.shape}")
+            print(f"✅ Raw outputs: {outputs}")
+            
+            probabilities = torch.nn.functional.softmax(outputs, dim=1)
+            print(f"✅ Probabilities: {probabilities}")
+            
+            confidence, prediction = torch.max(probabilities, dim=1)
+            print(f"✅ Prediction: {prediction.item()}, Confidence: {confidence.item()}")
+            
+            gender = "male" if prediction.item() == 0 else "female"
+            confidence_value = confidence.item()
+            
+            # Get probabilities for both classes
+            male_prob = probabilities[0][0].item()
+            female_prob = probabilities[0][1].item()
+            
+            print(f"🎯 Final prediction: {gender} (confidence: {confidence_value:.4f})")
+        
+        return {
+            "gender": gender,
+            "confidence": round(float(confidence_value), 4),
+            "probabilities": {
+                "male": round(float(male_prob), 4),
+                "female": round(float(female_prob), 4)
+            },
+            "raw_output": {
+                "male_score": float(outputs[0][0].item()),
+                "female_score": float(outputs[0][1].item())
+            }
+        }
+        
+    except Exception as e:
+        print(f"❌ Prediction failed with error: {str(e)}")
+        print(f"❌ Error type: {type(e).__name__}")
+        traceback.print_exc()
+        raise Exception(f"Prediction failed: {str(e)}")
+    
+# =============================================================================
+
 # Main Routes - Serve All HTML Pages
 # =============================================================================
 
@@ -497,7 +632,10 @@ def serve_static_files(filename):
 # =============================================================================
 
 @app.route("/api/health", methods=["GET"])
+
 @app.route('/health', methods=["GET"])
+
+
 def health_check():
     return jsonify({
         "message": "Multi-Model Medical Analysis API is running",
@@ -505,17 +643,30 @@ def health_check():
         "models_loaded": {
             "ecg_model": ecg_model is not None,
             "eeg_model": eeg_model is not None,
-            "drone_model": model is not None
+
+            "drone_model": model is not None,
+
+            "drone_model": model is not None,
+            "voice_gender_model": voice_model is not None
+
         },
         "upload_directory": UPLOAD_DIR,
         "supported_applications": [
             "ECG Analysis", 
             "EEG Classification", 
             "Doppler Analysis",
-            "Drone Audio Classification", 
-            "SAR Image Analysis"
+            "Drone Audio Classification",
+            "EEG Downsampling Analysis", 
+            "SAR Image Analysis",
+            "Voice Gender Classification (ECAPA-TDNN)"
+
+        ],
+         "eeg_downsampling_endpoints": [  # Add this section
+            "/api/classify_eeg_downsampled (POST)",
+            "/api/compare_eeg_analysis (POST)"
         ],
         "timestamp": datetime.now().isoformat()
+
     })
 
 # =============================================================================
@@ -532,10 +683,13 @@ def analyze_ecg():
         file = request.files["file"]
         df = pd.read_csv(file, header=0)
 
+
          # Get undersampling parameters from frontend
         original_sampling_rate = int(request.form.get("original_sr", 250))
         target_sampling_rate = int(request.form.get("target_sr", 250))
         exaggerate_effects = request.form.get("exaggerate_effects", "false").lower() == "true"
+
+
 
         # Normalize column names
         df.columns = [c.strip().upper() for c in df.columns]
@@ -582,6 +736,7 @@ def analyze_ecg():
             normal_abnormal = "Abnormal"
 
         best_index = int(np.argmax(probs[0]))
+
         original_confidence = float(probs[0][best_index])
         
         # Calculate aliasing impact on classification confidence
@@ -595,6 +750,7 @@ def analyze_ecg():
             "normal_abnormal": normal_abnormal,
             "best_class": ecg_labels[best_index],
             "best_prob": float(probs[0][best_index]),
+            "all_probabilities": {ecg_labels[i]: float(probs[0][i]) for i in range(len(ecg_labels))},
             "adjusted_confidence": adjusted_confidence,
             "aliasing_impact": aliasing_impact,
             "all_probabilities": {ecg_labels[i]: float(probs[0][i]) for i in range(len(ecg_labels))},
@@ -605,8 +761,12 @@ def analyze_ecg():
                 }
             })
 
+            
+
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 def apply_ecg_undersampling(ecg_signal, original_sr, target_sr, exaggerate=False):
     """
@@ -808,6 +968,453 @@ def classify_eeg():
         return jsonify({'error': str(e)}), 500
 
 # =============================================================================
+# EEG Downsampling Analysis Endpoints
+# =============================================================================
+
+@app.route('/api/classify_eeg_downsampled', methods=['POST'])
+def classify_eeg_downsampled():
+    """Classify EEG signals with downsampling option"""
+    try:
+        if eeg_model is None:
+            return jsonify({'error': 'EEG Model not loaded'}), 500
+
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'Empty filename'}), 400
+
+        # Get downsampling rate from request (default to 128Hz - no downsampling)
+        downsampling_rate = request.form.get('downsampling_rate', 128, type=int)
+        print(f"🎯 Downsampling rate requested: {downsampling_rate} Hz")
+
+        # Secure and temporarily save file
+        filename = secure_filename(file.filename)
+        temp_path = os.path.join(tempfile.gettempdir(), filename)
+        file.save(temp_path)
+        print(f"📁 Uploaded EEG file saved to: {temp_path}")
+
+        # Load signal
+        signal = np.load(temp_path, allow_pickle=True)
+        print(f"📊 Loaded EEG signal shape: {signal.shape}")
+
+        # Apply downsampling if requested rate is different from original
+        if downsampling_rate < 128:
+            signal = apply_downsampling_to_signal(signal, downsampling_rate)
+            print(f"📉 Downsampled signal shape: {signal.shape}")
+
+        # Preprocess
+        tensor = preprocess_eeg_signal(signal)
+
+        # Run model inference
+        results = run_eeg_model_inference(tensor)
+
+        # Clean up
+        os.remove(temp_path)
+
+        # Return JSON response with downsampling info
+        return jsonify({
+            'prediction': results['prediction'],
+            'confidence': results['confidence'],
+            'probabilities': results['all_probabilities'],
+            'downsampling_rate': downsampling_rate,
+            'original_rate': 128,
+            'signal_shape_after_downsampling': list(signal.shape)
+        })
+
+    except Exception as e:
+        print(f"❌ EEG Downsampled Classification Error: {str(e)}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+def apply_downsampling_to_signal(signal, target_rate):
+    """
+    Apply Nyquist downsampling to EEG signal
+    Args:
+        signal: numpy array of EEG data
+        target_rate: target sampling rate (Hz)
+    Returns:
+        downsampled_signal: numpy array with reduced sampling rate
+    """
+    original_rate = 128  # Your original sampling rate
+    downsampling_factor = original_rate // target_rate
+    
+    print(f"🔧 Downsampling: {original_rate}Hz -> {target_rate}Hz (factor: {downsampling_factor})")
+    
+    if signal.ndim == 3:
+        # Shape: (trials, channels, samples) or (trials, samples, channels)
+        if signal.shape[-1] == 19:  # (trials, samples, 19)
+            # Transpose to (trials, 19, samples) for consistent processing
+            signal = np.transpose(signal, (0, 2, 1))
+        
+        # Apply downsampling to each trial and channel
+        downsampled_trials = []
+        for trial in signal:
+            downsampled_trial = []
+            for channel in trial:
+                # Take every nth sample
+                downsampled_channel = channel[::downsampling_factor]
+                downsampled_trial.append(downsampled_channel)
+            downsampled_trials.append(np.array(downsampled_trial))
+        
+        downsampled_signal = np.array(downsampled_trials)
+        
+    elif signal.ndim == 2:
+        # Shape: (channels, samples) or (samples, channels)
+        if signal.shape[0] == 19:  # (19, samples)
+            downsampled_signal = signal[:, ::downsampling_factor]
+        elif signal.shape[1] == 19:  # (samples, 19)
+            downsampled_signal = signal[::downsampling_factor, :]
+        else:
+            # Assume (samples, channels) and downsample along time axis
+            downsampled_signal = signal[::downsampling_factor, :]
+    
+    else:
+        # 1D signal - simple downsampling
+        downsampled_signal = signal[::downsampling_factor]
+    
+    print(f"✅ Downsampled shape: {downsampled_signal.shape}")
+    return downsampled_signal
+
+@app.route('/api/compare_eeg_analysis', methods=['POST'])
+def compare_eeg_analysis():
+    """Compare analysis of original vs downsampled EEG signals"""
+    try:
+        if eeg_model is None:
+            return jsonify({'error': 'EEG Model not loaded'}), 500
+
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'Empty filename'}), 400
+
+        # Get downsampling rate from request
+        downsampling_rate = request.form.get('downsampling_rate', 64, type=int)
+        print(f"🔄 Comparing analysis: Original vs {downsampling_rate}Hz")
+
+        # Secure and temporarily save file
+        filename = secure_filename(file.filename)
+        temp_path = os.path.join(tempfile.gettempdir(), filename)
+        file.save(temp_path)
+
+        # Load original signal
+        original_signal = np.load(temp_path, allow_pickle=True)
+        
+        # Create downsampled signal
+        downsampled_signal = apply_downsampling_to_signal(original_signal.copy(), downsampling_rate)
+
+        # Analyze original signal
+        original_tensor = preprocess_eeg_signal(original_signal)
+        original_results = run_eeg_model_inference(original_tensor)
+
+        # Analyze downsampled signal
+        downsampled_tensor = preprocess_eeg_signal(downsampled_signal)
+        downsampled_results = run_eeg_model_inference(downsampled_tensor)
+
+        # Clean up
+        os.remove(temp_path)
+
+        # Return comparison results
+        return jsonify({
+            'original_analysis': {
+                'prediction': original_results['prediction'],
+                'confidence': original_results['confidence'],
+                'probabilities': original_results['all_probabilities'],
+                'signal_shape': list(original_signal.shape)
+            },
+            'downsampled_analysis': {
+                'prediction': downsampled_results['prediction'],
+                'confidence': downsampled_results['confidence'],
+                'probabilities': downsampled_results['all_probabilities'],
+                'signal_shape': list(downsampled_signal.shape),
+                'downsampling_rate': downsampling_rate
+            },
+            'comparison': {
+                'prediction_changed': original_results['prediction'] != downsampled_results['prediction'],
+                'confidence_difference': round(original_results['confidence'] - downsampled_results['confidence'], 4),
+                'original_rate': 128,
+                'downsampled_rate': downsampling_rate
+            }
+        })
+
+    except Exception as e:
+        print(f"❌ EEG Comparison Error: {str(e)}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+    
+
+
+    # =============================================================================
+# Voice Gender Classification - ECAPA-TDNN Integration
+# =============================================================================
+
+# Load Voice Gender Classification Model
+try:
+    # Load the model
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    voice_model = ECAPA_gender(C=1024)
+    
+    # Load the trained weights
+    model_path = "gender_classifier.model"
+    if os.path.exists(model_path):
+        voice_model.load_state_dict(torch.load(model_path, map_location=device))
+        voice_model.to(device)
+        voice_model.eval()
+        print("✅ ECAPA-TDNN Voice Gender Classification Model loaded successfully")
+        print(f"✅ Model device: {device}")
+    else:
+        print(f"❌ Model file not found: {model_path}")
+        voice_model = None
+        
+except Exception as e:
+    print(f"❌ Error loading voice gender model: {e}")
+    traceback.print_exc()
+    voice_model = None
+
+def preprocess_audio_for_ecapa(audio_path, target_sr=16000, duration=3.0):
+    """Preprocess audio for ECAPA-TDNN model"""
+    try:
+        print(f"🔄 Preprocessing audio: {audio_path}")
+        
+        # Load audio using torchaudio (matching your model's load_audio method)
+        audio, sr = torchaudio.load(audio_path)
+        print(f"✅ Audio loaded - original shape: {audio.shape}, sample rate: {sr}")
+        
+        # Resample if necessary
+        if sr != target_sr:
+            print(f"🔄 Resampling from {sr}Hz to {target_sr}Hz")
+            resampler = torchaudio.transforms.Resample(orig_freq=sr, new_freq=target_sr)
+            audio = resampler(audio)
+        
+        # Convert to mono
+        if audio.shape[0] > 1:
+            print("🔄 Converting stereo to mono")
+            audio = audio.mean(dim=0, keepdim=True)
+        
+        # Ensure minimum length
+        min_samples = int(target_sr * 1.0)  # At least 1 second
+        current_samples = audio.shape[1]
+        print(f"📊 Current samples: {current_samples}, Min required: {min_samples}")
+        
+        if current_samples < min_samples:
+            # Pad with zeros
+            padding = min_samples - current_samples
+            print(f"🔄 Padding audio with {padding} zeros")
+            audio = torch.nn.functional.pad(audio, (0, padding))
+        else:
+            # Take first 3 seconds
+            max_samples = int(target_sr * duration)
+            if current_samples > max_samples:
+                print(f"🔄 Truncating audio to {max_samples} samples ({duration}s)")
+                audio = audio[:, :max_samples]
+        
+        print(f"✅ Final audio shape: {audio.shape}")
+        return audio
+        
+    except Exception as e:
+        print(f"❌ Audio preprocessing failed: {str(e)}")
+        traceback.print_exc()
+        raise Exception(f"Audio preprocessing failed: {str(e)}")
+    
+def predict_voice_gender_ecapa(audio_path):
+    """Predict voice gender using ECAPA-TDNN model"""
+    try:
+        if voice_model is None:
+            raise Exception("Voice model not loaded")
+        
+        print(f"🎯 Starting voice prediction for: {audio_path}")
+        
+        # Preprocess audio
+        audio_tensor = preprocess_audio_for_ecapa(audio_path)
+        print(f"✅ Audio preprocessed - shape: {audio_tensor.shape}")
+        
+        # Move to appropriate device
+        audio_tensor = audio_tensor.to(device)
+        print(f"✅ Audio moved to device: {device}")
+        
+        # Run inference
+        with torch.no_grad():
+            print("🧠 Running model inference...")
+            outputs = voice_model(audio_tensor)
+            print(f"✅ Model output shape: {outputs.shape}")
+            print(f"✅ Raw outputs: {outputs}")
+            
+            probabilities = torch.nn.functional.softmax(outputs, dim=1)
+            print(f"✅ Probabilities: {probabilities}")
+            
+            confidence, prediction = torch.max(probabilities, dim=1)
+            print(f"✅ Prediction: {prediction.item()}, Confidence: {confidence.item()}")
+            
+            gender = "male" if prediction.item() == 0 else "female"
+            confidence_value = confidence.item()
+            
+            # Get probabilities for both classes
+            male_prob = probabilities[0][0].item()
+            female_prob = probabilities[0][1].item()
+            
+            print(f"🎯 Final prediction: {gender} (confidence: {confidence_value:.4f})")
+        
+        return {
+            "gender": gender,
+            "confidence": round(float(confidence_value), 4),
+            "probabilities": {
+                "male": round(float(male_prob), 4),
+                "female": round(float(female_prob), 4)
+            },
+            "raw_output": {
+                "male_score": float(outputs[0][0].item()),
+                "female_score": float(outputs[0][1].item())
+            }
+        }
+        
+    except Exception as e:
+        print(f"❌ Prediction failed with error: {str(e)}")
+        print(f"❌ Error type: {type(e)._name_}")
+        traceback.print_exc()
+        raise Exception(f"Prediction failed: {str(e)}")
+
+# =============================================================================
+# Voice Analysis Endpoints
+# =============================================================================
+
+@app.route("/voice-analysis")
+def voice_analysis_page():
+    """Serve voice analysis page"""
+    try:
+        return send_file("voice-analysis.html")
+    except FileNotFoundError:
+        return "Voice analysis page not found", 404
+
+@app.route("/api/classify-voice", methods=["POST", "OPTIONS"])
+def classify_voice():
+    """Classify voice gender from audio file using ECAPA-TDNN"""
+    try:
+        print("🎯 Voice classification endpoint called")
+        
+        # Handle CORS preflight
+        if request.method == 'OPTIONS':
+            response = jsonify({'status': 'ok'})
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+            response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
+            return response
+
+        if voice_model is None:
+            return jsonify({"error": "Voice gender model not loaded"}), 500
+
+        if "file" not in request.files:
+            return jsonify({"error": "No audio file uploaded"}), 400
+
+        file = request.files["file"]
+        if file.filename == "":
+            return jsonify({"error": "No file selected"}), 400
+
+        # Check file type
+        if not allowed_audio_file(file.filename):
+            return jsonify({"error": f"Invalid file type. Allowed: {ALLOWED_AUDIO_EXTENSIONS}"}), 400
+
+        # Save file temporarily
+        filename = secure_filename(file.filename)
+        temp_path = os.path.join(UPLOAD_DIR, f"voice_{filename}")
+        file.save(temp_path)
+        
+        print(f"📁 Saved voice file to: {temp_path}")
+        print(f"📊 File size: {os.path.getsize(temp_path)} bytes")
+
+        try:
+            # Validate audio file
+            print("🔍 Validating audio file...")
+            validate_audio_file(temp_path)
+            
+            # Get audio info for frontend display
+            y, sr = librosa.load(temp_path, sr=None)
+            duration = len(y) / sr
+            print(f"✅ Audio validated - Duration: {duration:.2f}s, Sample rate: {sr}Hz")
+            
+            # Classify gender using ECAPA-TDNN
+            print("🎯 Starting gender classification...")
+            result = predict_voice_gender_ecapa(temp_path)
+            
+            # Clean up
+            os.remove(temp_path)
+            
+            print("✅ Voice classification completed successfully")
+            
+            # Return the complete result with CORS headers
+            response_data = {
+                "success": True,
+                "gender": result["gender"],
+                "confidence": result["confidence"],
+                "probabilities": result["probabilities"],
+                "raw_output": result.get("raw_output", {}),
+                "audio_info": {
+                    "duration": round(duration, 2),
+                    "sample_rate": sr,
+                    "samples": len(y)
+                },
+                "model_info": {
+                    "model_type": "ECAPA-TDNN",
+                    "architecture": "Deep Speaker Embedding",
+                    "device": str(device)
+                },
+                "message": "Voice gender classification successful",
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            response = jsonify(response_data)
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response
+            
+        except Exception as e:
+            # Clean up on error
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+            print(f"❌ Error during classification: {str(e)}")
+            traceback.print_exc()
+            response = jsonify({"error": f"Classification failed: {str(e)}"})
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response, 500
+
+    except Exception as e:
+        print(f"❌ Voice classification endpoint error: {str(e)}")
+        traceback.print_exc()
+        response = jsonify({"error": f"Voice classification failed: {str(e)}"})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 500
+
+@app.route("/api/voice-model-status", methods=["GET"])
+def voice_model_status():
+    """Get voice model status"""
+    print("🔍 Voice model status endpoint called")
+    return jsonify({
+        "model_loaded": voice_model is not None,
+        "system_ready": voice_model is not None,
+        "model_type": "ECAPA-TDNN",
+        "model_architecture": "Deep Speaker Embedding Network",
+        "input_requirements": "16kHz audio, 80-band Mel-spectrogram",
+        "device": str(device) if voice_model else "None",
+        "timestamp": datetime.now().isoformat()
+    })
+
+# Simple test endpoint
+@app.route("/api/voice-test", methods=["GET"])
+def voice_test():
+    """Simple test endpoint for voice analysis"""
+    return jsonify({
+        "message": "Voice analysis endpoint is working!",
+        "endpoint": "/api/voice-test",
+        "model_loaded": voice_model is not None,
+        "available_endpoints": [
+            "/api/voice-model-status (GET)",
+            "/api/classify-voice (POST)", 
+            "/voice-analysis (GET)"
+        ],
+        "timestamp": datetime.now().isoformat()
+    })
+# =============================================================================
 # File Management Endpoints
 # =============================================================================
 
@@ -849,7 +1456,7 @@ def delete_file(filename):
         os.remove(filepath)
         return jsonify({"message": f"File {safe_filename} deleted successfully"})
     except Exception as e:
-       return jsonify({"error": f"Could not delete file: {str(e)}"}), 500
+        return jsonify({"error": f"Could not delete file: {str(e)}"}), 500
 
 # =============================================================================
 # Doppler Analysis Endpoints
@@ -1127,7 +1734,7 @@ def predict_status():
         "available_classes": list(model.config.id2label.values()) if model else [],
         "timestamp": datetime.now().isoformat()
     })      
-  # =============================================================================
+# =============================================================================
 # Drone Prediction Endpoint
 # =============================================================================
 
@@ -1300,6 +1907,8 @@ def convert_tiff():
             os.unlink(tiff_path)
         return jsonify({'error': f'Error converting TIFF to PNG: {str(e)}'}), 500
 
+
+
 # =============================================================================
 # Application Entry Point
 # =============================================================================
@@ -1323,13 +1932,19 @@ if __name__ == "__main__":
     print(f"🚀 Starting Multi-Model Medical Analysis Server")
     print(f"📍 Upload directory: {os.path.abspath(UPLOAD_DIR)}")
     print(f"📊 Supported file types: {ALLOWED_EXTENSIONS}")
-    print(f"🤖 Models: ECG - {'Loaded' if ecg_model else 'Not loaded'}, EEG - {'Loaded' if eeg_model else 'Not loaded'}, Drone - {'Loaded' if model else 'Not loaded'}")
+
+    print(f"🤖 Models: ECG - {'Loaded' if ecg_model else 'Not loaded'}, EEG - {'Loaded' if eeg_model else 'Not loaded'}, Drone - {'Loaded' if model else 'Not loaded'}, Voice (ECAPA-TDNN) - {'Loaded' if voice_model else 'Not loaded'}")
+
     print(f"🌐 Web Applications:")
     print(f"   - Main: http://127.0.0.1:5000")
     print(f"   - ECG Analysis: http://127.0.0.1:5000/ecg")
     print(f"   - EEG Analysis: http://127.0.0.1:5000/eeg")
     print(f"   - Doppler Analysis: http://127.0.0.1:5000/doppler-analysis")
     print(f"   - Drone & SAR Analysis: http://127.0.0.1:5000/drone-sar-analysis")
+
+
+    print(f"   - Voice Analysis: http://127.0.0.1:5000/voice-analysis")
+
     print(f"   - Spectrogram Analysis: http://127.0.0.1:5000/spectro")
     print(f"🌐 API Health: http://127.0.0.1:5000/api/health")
     

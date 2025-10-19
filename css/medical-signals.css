@@ -12,7 +12,10 @@
     background: white;
     border: 1px solid #dee2e6;
     border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(240, 30, 30, 0.1);
+   box-shadow: 0 2px 4px rgba(240, 30, 30, 0.1);
+
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
 }
 
 .control-panel {
@@ -218,6 +221,7 @@
     padding: 0.25rem 0.5rem;
 }
 
+
 /* Aliasing Controls Styling */
 .aliasing-controls {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
@@ -342,6 +346,31 @@
   padding-top: 1rem;
   min-height: 600px;
 }
+
+.sampling-info {
+    background: #f8f9fa;
+    border-radius: 5px;
+    padding: 8px;
+    margin-top: 8px;
+    font-size: 0.75rem;
+}
+
+.nyquist-warning {
+    color: #dc3545;
+    font-weight: 500;
+    font-size: 0.7rem;
+    margin-top: 4px;
+}
+
+.probability-bars .progress {
+    background-color: #e9ecef;
+}
+
+.confidence-badge {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+}
+
 
 }
 

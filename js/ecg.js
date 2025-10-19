@@ -1378,7 +1378,7 @@ function drawXOR(left, right, selected, matrix = rawMatrix) {
 
     // Draw polar plot title and labels
     ctx.fillStyle = "#333"; ctx.font = "14px Arial"; ctx.textAlign = "center";
-    ctx.fillText(`Polar Plot: ${lead}`, cx, 40, 200);
+    ctx.fillText(`Polar Plot: ${lead}`, cx, 40);
     ctx.fillText("Radius: |Amplitude| (mV)", cx, h - 10);
     ctx.textAlign = "left";
     ctx.fillText("Angle: Time (radians)", 80, cy);

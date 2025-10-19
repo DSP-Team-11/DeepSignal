@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Advanced Acoustic Signal Analysis for Doppler, radar, drone, and submarine signals">
+    <meta name="author" content="">
+
+    <title>Voice Analysis - DeepSignal</title>
+
+    <!-- CSS FILES -->        
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Open+Sans&display=swap" rel="stylesheet">
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/templatemo-topic-listing.css" rel="stylesheet">
+    
+    <!-- Embedded CSS -->
+    <style>
+        .analysis-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.1);
+            padding: 25px;
+            margin-bottom: 25px;
+            border: none;
+            height: 100%;
+        }
+        
+        .upload-area {
+            border: 3px dashed #dee2e6;
+            border-radius: 12px;
+            padding: 30px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+            margin-bottom: 20px;
+        }
+        
+        .upload-area:hover {
+            border-color: #80d0c7;
+            background: #f0f7ff;
+            transform: translateY(-2px);
+        }
+        
+        .result-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 5px solid #80d0c7;
+        }
+        
+        .gender-badge {
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 1rem;
+            display: inline-block;
+        }
+        
+        .gender-male {
+            background: linear-gradient(135deg, #0d6efd, #0dcaf0);
+            color: white;
+            box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3);
+        }
+        
+        .gender-female {
+            background: linear-gradient(135deg, #ff6b6b, #ffa8a8);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+        
+        .btn-custom {
+            background: linear-gradient(135deg, #80d0c7, #80d0c7);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(44, 107, 237, 0.3);
+        }
+        
+        .btn-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(44, 107, 237, 0.4);
+        }
+        
+        .btn-custom:active {
+            transform: translateY(0);
+        }
+        
+        .btn-custom:disabled {
+            background: #6c757d;
+            transform: none;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        
+        .confidence-meter {
+            height: 14px;
+            background: #e9ecef;
+            border-radius: 10px;
+            margin: 15px 0;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 1s ease-in-out;
+        }
+        
+        .confidence-male {
+            background: linear-gradient(90deg, #0d6efd, #0dcaf0);
+        }
+        
+        .confidence-female {
+            background: linear-gradient(90deg, #ff6b6b, #ffa8a8);
+        }
+        
+        .processing-step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            transition: all 0.3s ease;
+        }
+        
+        .step-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #80d0c7, #80d0c7);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-weight: bold;
+            font-size: 1rem;
+            box-shadow: 0 4px 10px rgba(44, 107, 237, 0.3);
+        }
+        
+        .file-info-card {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        .waveform-container {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+            border-bottom: 2px solid #80d0c7;
+            padding-bottom: 8px;
+        }
+        
+        .column-header {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #333;
+        }
+    </style>
+</head>
+<body id="top">
+    <main>
+        <nav class="navbar navbar-expand-lg">
+            <div class="container">
+                <a class="navbar-brand" href="index.html">
+                    <i class="bi-activity"></i>
+                    <span>DeepSignal</span>
+                </a>
+
+                <div class="d-lg-none ms-auto me-4">
+                    <a href="#top" class="navbar-icon bi-person smoothscroll"></a>
+                </div>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-lg-5 me-lg-auto">
+                        <li class="nav-item">
+                            <a class="nav-link click-scroll" href="#section_1">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link click-scroll" href="#section_2">Applications</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link click-scroll" href="#section_3">About</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        
+        <!-- Header -->
+        <header class="site-header">
+            <div class="container text-center">
+                <h1 class="display-5 fw-bold text-white mb-3">Voice Analysis Studio</h1>
+                <p class="lead text-white opacity-90">
+                    AI-Powered Voice Gender Detection & Signal Processing
+                </p>
+            </div>
+        </header>
+        
+        <!-- Main Content -->
+        <section class="container mb-5">
+            <div class="row">
+                <!-- Left Column - Gender Classification -->
+                <div class="col-lg-6">
+                    <div class="analysis-container">
+                        <h3 class="column-header">
+                            <i class="bi bi-gender-ambiguous me-2"></i>Gender Classification
+                        </h3>
+                        
+                        <!-- Upload Section -->
+                        <div class="upload-area" id="uploadArea">
+                            <i class="bi bi-mic-fill display-6 text-primary mb-3"></i>
+                            <h5 class="mb-3">Select Voice File</h5>
+                            <p class="text-muted mb-4">WAV, MP3, M4A, FLAC</p>
+                            <div>
+                                <button type="button" class="btn btn-custom" id="selectFileBtn">
+                                    <i class="bi bi-folder2-open me-2"></i>Choose Audio File
+                                </button>
+                                <input type="file" id="fileInput" accept="audio/*" style="display: none;">
+                            </div>
+                        </div>
+                        
+                        <!-- File Info -->
+                        <div class="file-info-card" id="fileInfo" style="display: none;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-file-earmark-music text-primary fs-4 me-3"></i>
+                                    <div>
+                                        <h6 class="mb-1" id="fileName">File Name</h6>
+                                        <p class="mb-0 text-muted small" id="fileStatus">Ready for analysis</p>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-outline-danger btn-sm" id="removeFile">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Audio Player -->
+                        <div class="mt-3" id="audioPlayerContainer" style="display: none;">
+                            <h6 class="mb-2">
+                                <i class="bi bi-play-circle me-1"></i>Audio Preview
+                            </h6>
+                            <audio controls class="w-100 rounded" id="originalAudio" style="height: 40px;">
+                                Your browser does not support the audio element.
+                            </audio>
+                        </div>
+                        
+                        <!-- Analyze Button -->
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-custom w-100 py-2" id="analyzeBtn" disabled>
+                                <i class="bi bi-cpu me-2"></i>Analyze Voice Gender
+                            </button>
+                        </div>
+                        
+                        <!-- Results Section -->
+                        <div class="mt-4" id="resultsSection" style="display: none;">
+                            <div class="section-title">Classification Results</div>
+                            
+                            <!-- Gender Result -->
+                            <div class="result-card text-center">
+                                <h6 class="mb-3">Detected Gender</h6>
+                                <div class="mb-3">
+                                    <span class="gender-badge gender-male" id="genderResult" style="display: none;">
+                                        <i class="bi bi-gender-male me-1"></i>MALE VOICE
+                                    </span>
+                                    <span class="gender-badge gender-female" id="genderResultFemale" style="display: none;">
+                                        <i class="bi bi-gender-female me-1"></i>FEMALE VOICE
+                                    </span>
+                                </div>
+                                <div class="confidence-meter">
+                                    <div class="confidence-fill" id="confidenceBar" style="width: 0%"></div>
+                                </div>
+                                <p class="mt-2 mb-0 fw-bold text-primary">
+                                    Confidence: <span id="confidenceValue">0%</span>
+                                </p>
+                            </div>
+                            
+                            <!-- Processing Pipeline -->
+                            <div class="mt-3">
+                                <div class="section-title">Processing Steps</div>
+                                <div class="processing-step">
+                                    <div class="step-icon">1</div>
+                                    <div>
+                                        <h6 class="mb-1 fw-bold">Feature Extraction</h6>
+                                        <p class="mb-0 text-muted small">Extract MFCC features</p>
+                                    </div>
+                                </div>
+                                <div class="processing-step">
+                                    <div class="step-icon">2</div>
+                                    <div>
+                                        <h6 class="mb-1 fw-bold">AI Classification</h6>
+                                        <p class="mb-0 text-muted small">ECAPA-TDNN model analysis</p>
+                                    </div>
+                                </div>
+                                <div class="processing-step">
+                                    <div class="step-icon">3</div>
+                                    <div>
+                                        <h6 class="mb-1 fw-bold">Confidence Scoring</h6>
+                                        <p class="mb-0 text-muted small">Calculate prediction confidence</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Right Column - Downsampling -->
+                <div class="col-lg-6">
+                    <div class="analysis-container">
+                        <h3 class="column-header">
+                            <i class="bi bi-sliders me-2"></i>Voice Downsampling
+                        </h3>
+                        
+                        <!-- Downsampling Controls -->
+                        <div class="result-card">
+                            <h6 class="mb-3">Downsampling Controls</h6>
+                            
+                            <div class="mb-3">
+                                <label for="downsampleSlider" class="form-label fw-bold">
+                                    Sample Rate: <span id="sampleRateValue">16000</span> Hz
+                                </label>
+                                <input type="range" class="form-range" id="downsampleSlider" 
+                                       min="4000" max="16000" step="1000" value="16000">
+                                <div class="d-flex justify-content-between text-muted small">
+                                    <span>4kHz</span>
+                                    <span>8kHz</span>
+                                    <span>12kHz</span>
+                                    <span>16kHz</span>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-custom" id="applyDownsampling">
+                                    <i class="bi bi-play-fill me-2"></i>Apply Downsampling
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" id="resetDownsampling">
+                                    <i class="bi bi-arrow-clockwise me-2"></i>Reset to Original
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Audio Preview -->
+                        <div class="result-card">
+                            <h6 class="mb-3">Audio Preview</h6>
+                            <div id="downsampledAudioContainer" style="display: none;">
+                                <audio controls class="w-100 rounded mb-2" id="downsampledAudio" style="height: 40px;">
+                                    Your browser does not support the audio element.
+                                </audio>
+                                <p class="small text-muted mb-0" id="downsampledInfo">
+                                    Downsampled audio ready for playback
+                                </p>
+                            </div>
+                            <div id="noDownsampledAudio" class="text-center py-3">
+                                <i class="bi bi-music-note-beamed display-5 text-muted mb-2"></i>
+                                <p class="text-muted small">Apply downsampling to hear the result</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Waveform Visualization -->
+                        <div class="result-card">
+                            <h6 class="mb-3">Waveform Visualization</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-center mb-2 small">Original Audio</h6>
+                                    <div class="waveform-container">
+                                        <canvas id="originalWaveform" class="w-100" height="80"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-center mb-2 small">Downsampled Audio</h6>
+                                    <div class="waveform-container">
+                                        <canvas id="downsampledWaveform" class="w-100" height="80"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Reset Button -->
+            <div class="row mt-4">
+                <div class="col-12 text-center">
+                    <button type="button" class="btn btn-outline-secondary" id="resetAnalysis">
+                        <i class="bi bi-arrow-repeat me-2"></i>Reset Analysis
+                    </button>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Footer -->
+        <footer class="bg-dark text-white py-4 mt-5">
+            <div class="container text-center">
+                <p class="mb-0">&copy; 2024 DeepSignal. Advanced Signal Analysis Platform.</p>
+            </div>
+        </footer>
+    </main>
+
+    <!-- JAVASCRIPT FILES -->
+    <script src="js/jquery.min.js"></script>
+    <script src="js/bootstrap.bundle.min.js"></script>
+    <script src="js/jquery.sticky.js"></script>
+    <script src="js/custom.js"></script>
+    <script src="js/voice-analysis.js"></script>
+</body>
+</html>
