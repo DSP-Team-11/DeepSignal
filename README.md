@@ -1,6 +1,6 @@
 # DeepSignal: Signal Analysis Made Simple
 
-**Live Website:** **[View Here](https://deepsignal11.netlify.app/)**
+**Live Website:** **[View Here](https://dsp-team-11.github.io/DeepSignal/)**
 
 
 **Demo Video:** **[Watch Demo](https://drive.google.com/file/d/19MT04splctknZ6oLoesurHJnaQJ7FXdu/view?usp=sharing)**
