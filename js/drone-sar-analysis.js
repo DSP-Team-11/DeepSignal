@@ -665,3 +665,40 @@ document.addEventListener('DOMContentLoaded', () => {
     
     console.log('DeepSignal analyzers initialized successfully');
 });
+
+(function() {
+    // Prevent all link navigation
+    document.addEventListener('click', function(e) {
+        if (e.target.tagName === 'A' || e.target.closest('a')) {
+            console.log('🚫 ALL link clicks prevented');
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            return false;
+        }
+    }, true);
+    
+    // Prevent all form submissions
+    document.addEventListener('submit', function(e) {
+        console.log('🚫 ALL form submissions prevented');
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        return false;
+    }, true);
+    
+    // Prevent browser navigation
+    window.addEventListener('beforeunload', function(e) {
+        console.log('🚫 ALL page unloads prevented');
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+    });
+    
+    // Prevent back/forward navigation
+    history.pushState(null, null, window.location.href);
+    window.addEventListener('popstate', function(e) {
+        history.pushState(null, null, window.location.href);
+        console.log('🚫 Browser navigation prevented');
+    });
+})();

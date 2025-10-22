@@ -4,7 +4,7 @@
 import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend
 import matplotlib.pyplot as plt
-from flask import Flask, request, jsonify, send_file, render_template, send_from_directory
+from flask import Flask, request, jsonify, send_file, render_template, send_from_directory, request
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import numpy as np
@@ -18,6 +18,7 @@ import soundfile as sf
 import matplotlib.pyplot as plt
 import rasterio
 from scipy.signal import medfilt, find_peaks
+from scipy import signal
 from PIL import Image
 from datetime import datetime
 import io
@@ -32,9 +33,10 @@ from transformers import AutoProcessor, AutoModelForAudioClassification
 
 from voice_model import ECAPA_gender
 import torch.nn.functional as F
+import  torchaudio,torchaudio.functional as F
 from typing import Optional
-    
 
+from model_detect_antialiasing import predict_label
 
 # Import your model functions
 try:
@@ -53,6 +55,7 @@ CORS(app)
 # Configuration
 # =============================================================================
 UPLOAD_DIR = "uploads"
+PROCESSED_FOLDER = "processed"
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
 ALLOWED_EXTENSIONS = {'npy', 'npz', 'csv', 'txt'}
 
@@ -63,7 +66,7 @@ ALLOWED_IMAGE_EXTENSIONS = {'tif', 'tiff', 'jpg', 'jpeg', 'png'}
 
 # Create directories
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-
+os.makedirs(PROCESSED_FOLDER, exist_ok=True)
 # =============================================================================
 # Load Models
 # =============================================================================
@@ -430,6 +433,116 @@ def analyze_sar_image(image_path, is_tiff=True):
     except Exception as e:
         raise Exception(f"Error in SAR analysis: {str(e)}")
 
+
+# Drone Downsampling Endpoints - ADD THESE ROUTES
+# =============================================================================
+
+@app.route("/drone-downsampling")
+def drone_downsampling_page():
+    """Serve drone downsampling analysis page"""
+    try:
+        return send_file("drone-downsampling.html")
+    except FileNotFoundError:
+        return "Drone downsampling page not found", 404
+
+@app.route("/api/drone-downsample/upload", methods=["POST"])
+def upload_drone_audio():
+    """Upload audio file for downsampling analysis"""
+    try:
+        if "file" not in request.files:
+            return jsonify({"error": "No file uploaded"}), 400
+
+        file = request.files["file"]
+        if file.filename == "":
+            return jsonify({"error": "No file selected"}), 400
+
+        if not allowed_audio_file(file.filename):
+            return jsonify({"error": f"Invalid file type. Allowed: {ALLOWED_AUDIO_EXTENSIONS}"}), 400
+
+        # Save with timestamp
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
+        safe_filename = secure_filename(file.filename)
+        filename = f"{timestamp}_{safe_filename}"
+        file_path = os.path.join(UPLOAD_DIR, filename)
+        file.save(file_path)
+
+        # Get audio info
+        y, sr = librosa.load(file_path, sr=None)
+        duration = len(y) / sr
+
+        return jsonify({
+            "success": True,
+            "filename": filename,
+            "audio_info": {
+                "original_sample_rate": sr,
+                "duration_seconds": round(duration, 2),
+                "samples": len(y),
+                "file_size": os.path.getsize(file_path)
+            }
+        })
+
+    except Exception as e:
+        return jsonify({"error": f"Upload failed: {str(e)}"}), 500
+
+@app.route("/api/drone-downsample/process", methods=["POST"])
+def drone_downsample():
+    """Downsample audio and get real-time predictions"""
+    try:
+        data = request.get_json()
+
+        if not data or "filename" not in data or "sample_rate" not in data:
+            return jsonify({"error": "Missing 'filename' or 'sample_rate'"}), 400
+
+        filename = os.path.basename(data["filename"])
+        new_sr = int(data["sample_rate"])
+
+        if new_sr < 3000 or new_sr > 16000:
+            return jsonify({"error": "Sample rate must be between 3000-16000 Hz"}), 400
+
+        # Use your existing UPLOAD_DIR
+        in_path = os.path.join(UPLOAD_DIR, filename)
+        if not os.path.exists(in_path):
+            return jsonify({"error": "File not found"}), 404
+
+        # Load and downsample audio
+        waveform, orig_sr = torchaudio.load(in_path)
+        
+        print(f"🔄 Downsampling: {orig_sr}Hz → {new_sr}Hz")
+        
+        # Resample using torchaudio
+        downsampled = F.resample(waveform, orig_freq=orig_sr, new_freq=new_sr)
+
+        # Save processed audio with unique name
+        out_filename = f"downsampled_{new_sr}hz_{filename}"
+        out_path = os.path.join(PROCESSED_FOLDER, out_filename)
+        torchaudio.save(out_path, downsampled, new_sr)
+
+        # Use your EXISTING predict_drone function
+        label, confidence = predict_drone(out_path)
+
+        return jsonify({
+            "success": True,
+            "sample_rate": new_sr,
+            "label": label,
+            "confidence": round(confidence, 4),
+            "confidence_percent": round(confidence * 100, 1),
+            "audio_url": f"/api/drone-downsample/audio/{out_filename}",
+            "message": f"Analysis at {new_sr}Hz completed"
+        })
+
+    except Exception as e:
+        print(f"❌ Downsampling error: {str(e)}")
+        return jsonify({"error": f"Processing failed: {str(e)}"}), 500
+
+@app.route("/api/drone-downsample/audio/<filename>")
+def serve_processed_audio(filename):
+    """Serve processed audio files"""
+    try:
+        safe_filename = os.path.basename(filename)
+        return send_from_directory(PROCESSED_FOLDER, safe_filename)
+    except FileNotFoundError:
+        return jsonify({"error": "Audio file not found"}), 404
+
 # =============================================================================
 # Voice Gender Classification - ECAPA-TDNN Integration
 # =============================================================================
@@ -641,6 +754,19 @@ def serve_static_files(filename):
 # =============================================================================
 
 @app.route("/api/health", methods=["GET"])
+def api_health():
+    """Health check endpoint"""
+    return jsonify({
+        "status": "healthy",
+        "message": "Multi-Model Medical Analysis API is running",
+        "timestamp": datetime.now().isoformat(),
+        "models_loaded": {
+            "ecg_model": ecg_model is not None,
+            "eeg_model": eeg_model is not None,
+            "drone_model": model is not None,
+            "voice_gender_model": voice_model is not None
+        }
+    })
 
 @app.route('/health', methods=["GET"])
 
@@ -1777,82 +1903,160 @@ def get_doppler_downsampling_waveform(filename):
     except Exception as e:
         return jsonify({"error": f"Waveform extraction failed: {str(e)}"}), 500
         
-# =============================================================================
-# Drone Analysis Endpoints
-# =============================================================================
-
-@app.route("/drone-test", methods=["GET"])
-def drone_test():
-    """Test endpoint for drone analysis"""
-    return jsonify({
-        "message": "Drone analysis endpoint is working",
-        "model_loaded": model is not None,
-        "processor_loaded": processor is not None,
-        "endpoints": {
-            "test": "/drone-test (GET)",
-            "predict": "/predict (POST)",
-            "health": "/api/health (GET)"
-        },
-        "instructions": "Send a POST request to /predict with an audio file"
-    })
-
-@app.route("/test-audio", methods=["POST"])
-def test_audio():
-    """Test endpoint to check if audio files are valid"""
-    if "file" not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
-
-    file = request.files["file"]
-    if file.filename == "":
-        return jsonify({"error": "No file selected"}), 400
-
-    try:
-        # Save file temporarily
-        temp_path = os.path.join(UPLOAD_DIR, f"test_{secure_filename(file.filename)}")
-        file.save(temp_path)
         
-        # Get file info
-        file_size = os.path.getsize(temp_path)
-        
-        # Test loading with librosa
-        waveform, sr = librosa.load(temp_path, sr=None)
-        duration = len(waveform) / sr
-        
-        # Clean up
-        os.remove(temp_path)
-        
-        return jsonify({
-            "valid": True,
-            "file_size_bytes": file_size,
-            "sample_rate": sr,
-            "samples": len(waveform),
-            "duration_seconds": round(duration, 2),
-            "message": "Audio file is valid"
-        })
-        
-    except Exception as e:
-        if 'temp_path' in locals() and os.path.exists(temp_path):
-            try:
-                os.remove(temp_path)
-            except:
-                pass
-        return jsonify({
-            "valid": False,
-            "error": str(e),
-            "message": "Audio file is invalid or corrupted"
-        }), 400
+# # ⬆️ رفع ملف الصوت
+# @app.route("/doppler-downsampling-upload", methods=["POST"])
+# def upload_doppler_downsampling_audio():
+#     file = request.files["file"]
+#     file_path = os.path.join(DOPPLER_DOWNSAMPLING_UPLOAD_FOLDER, file.filename)
+#     file.save(file_path)
+#     return jsonify({"filename": file.filename})
 
 
-@app.route("/predict/status", methods=["GET"])
-def predict_status():
-    """Get current prediction system status"""
-    return jsonify({
-        "model_loaded": model is not None,
-        "processor_loaded": processor is not None,
-        "system_ready": model is not None and processor is not None,
-        "available_classes": list(model.config.id2label.values()) if model else [],
-        "timestamp": datetime.now().isoformat()
-    })      
+# # 🎚️ تنفيذ عملية الـ downsampling
+# @app.route("/doppler-downsampling", methods=["POST"])
+# def doppler_downsample():
+#     try:
+#         data = request.get_json()
+#         if not data or "filename" not in data or "sample_rate" not in data:
+#             return jsonify({"error": "Missing 'filename' or 'sample_rate'"}), 400
+
+#         filename = os.path.basename(data["filename"])
+#         new_sr = int(data["sample_rate"])
+
+#         if new_sr <= 0:
+#             return jsonify({"error": "Invalid sample rate"}), 400
+
+#         in_path = os.path.join(DOPPLER_DOWNSAMPLING_UPLOAD_FOLDER, filename)
+#         if not os.path.exists(in_path):
+#             return jsonify({"error": "File not found"}), 404
+
+#         waveform, orig_sr = torchaudio.load(in_path)
+#         aliased = F.resample(waveform, orig_freq=orig_sr, new_freq=new_sr)
+
+#         out_path = os.path.join(DOPPLER_DOWNSAMPLING_PROCESSED_FOLDER, f"{new_sr}_{filename}")
+#         torchaudio.save(out_path, aliased, new_sr)
+
+#         return jsonify({
+#             "sample_rate": new_sr,
+#             "audio_url": f"/doppler-downsampling-processed/{new_sr}_{filename}"
+#         })
+
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
+
+
+# # 🔊 تقديم الملف الناتج لتشغيله
+# @app.route("/doppler-downsampling-processed/<filename>")
+# def serve_doppler_downsampling_audio(filename):
+#     return send_from_directory(DOPPLER_DOWNSAMPLING_PROCESSED_FOLDER, filename)
+
+
+# # 💾 تحميل الملف الناتج
+# @app.route("/doppler-downsampling-download/<filename>")
+# def download_dopple_downsampling_audio(filename):
+#     safe_name = os.path.basename(filename)
+#     file_path = os.path.join(DOPPLER_DOWNSAMPLING_PROCESSED_FOLDER, safe_name)
+#     if not os.path.exists(file_path):
+#         return jsonify({"error": "File not found"}), 404
+#     return send_from_directory(DOPPLER_DOWNSAMPLING_PROCESSED_FOLDER, safe_name, as_attachment=True)
+
+
+# # 📈 رسم شكل الموجة
+# @app.route("/doppler-downsampling-waveform/<filename>")
+# def get_doppler_downsampling_waveform(filename):
+#     safe_name = os.path.basename(filename)
+#     file_path = os.path.join(DOPPLER_DOWNSAMPLING_PROCESSED_FOLDER, safe_name)
+#     if not os.path.exists(file_path):
+#         return jsonify({"error": "File not found"}), 404
+
+#     waveform, sr = torchaudio.load(file_path)
+#     data = waveform[0].tolist()
+#     max_points = 2000
+#     step = max(1, len(data) // max_points)
+#     downsampled = data[::step]
+
+#     return jsonify({
+#         "sample_rate": sr,
+#         "waveform": downsampled
+#     })
+
+# # =============================================================================
+# # Drone Analysis Endpoints
+# # =============================================================================
+
+# @app.route("/drone-test", methods=["GET"])
+# def drone_test():
+#     """Test endpoint for drone analysis"""
+#     return jsonify({
+#         "message": "Drone analysis endpoint is working",
+#         "model_loaded": model is not None,
+#         "processor_loaded": processor is not None,
+#         "endpoints": {
+#             "test": "/drone-test (GET)",
+#             "predict": "/predict (POST)",
+#             "health": "/api/health (GET)"
+#         },
+#         "instructions": "Send a POST request to /predict with an audio file"
+#     })
+
+# @app.route("/test-audio", methods=["POST"])
+# def test_audio():
+#     """Test endpoint to check if audio files are valid"""
+#     if "file" not in request.files:
+#         return jsonify({"error": "No file uploaded"}), 400
+
+#     file = request.files["file"]
+#     if file.filename == "":
+#         return jsonify({"error": "No file selected"}), 400
+
+#     try:
+#         # Save file temporarily
+#         temp_path = os.path.join(UPLOAD_DIR, f"test_{secure_filename(file.filename)}")
+#         file.save(temp_path)
+        
+#         # Get file info
+#         file_size = os.path.getsize(temp_path)
+        
+#         # Test loading with librosa
+#         waveform, sr = librosa.load(temp_path, sr=None)
+#         duration = len(waveform) / sr
+        
+#         # Clean up
+#         os.remove(temp_path)
+        
+#         return jsonify({
+#             "valid": True,
+#             "file_size_bytes": file_size,
+#             "sample_rate": sr,
+#             "samples": len(waveform),
+#             "duration_seconds": round(duration, 2),
+#             "message": "Audio file is valid"
+#         })
+        
+#     except Exception as e:
+#         if 'temp_path' in locals() and os.path.exists(temp_path):
+#             try:
+#                 os.remove(temp_path)
+#             except:
+#                 pass
+#         return jsonify({
+#             "valid": False,
+#             "error": str(e),
+#             "message": "Audio file is invalid or corrupted"
+#         }), 400
+
+
+# @app.route("/predict/status", methods=["GET"])
+# def predict_status():
+#     """Get current prediction system status"""
+#     return jsonify({
+#         "model_loaded": model is not None,
+#         "processor_loaded": processor is not None,
+#         "system_ready": model is not None and processor is not None,
+#         "available_classes": list(model.config.id2label.values()) if model else [],
+#         "timestamp": datetime.now().isoformat()
+#     })      
 # =============================================================================
 # Drone Prediction Endpoint
 # =============================================================================

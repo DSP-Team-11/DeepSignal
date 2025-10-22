@@ -43,22 +43,21 @@
             }
             
             /* Downsampling Tool Styles */
-    #waveCanvas {
-      border: 1px solid #0078d7;
-      border-radius: 5px;
-      width: 100%;
-      height: 200px;
-      background-color: #f8f9fa;
-    }
-    .downsampling-controls {
-      background: #f8f9fa;
-      border-radius: 8px;
-      padding: 20px;
-    }
-    .processing-indicator {
-      display: none;
-    }
-
+            #waveCanvas {
+                border: 1px solid #0078d7;
+                border-radius: 5px;
+                width: 100%;
+                height: 200px;
+                background-color: #f8f9fa;
+            }
+            .downsampling-controls {
+                background: #f8f9fa;
+                border-radius: 8px;
+                padding: 20px;
+            }
+            .processing-indicator {
+                display: none;
+            }
         </style>
     </head>
 
@@ -145,26 +144,14 @@
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="downsampling-tab" data-bs-toggle="tab" data-bs-target="#downsampling-tab-pane" type="button" role="tab" aria-controls="downsampling-tab-pane" aria-selected="false">
+                                        <i class="bi-soundwave me-2"></i>Downsampling Tool
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
                                     <button class="nav-link" id="detection-tab" data-bs-toggle="tab" data-bs-target="#detection-tab-pane" type="button" role="tab" aria-controls="detection-tab-pane" aria-selected="false">
                                         <i class="bi-search me-2"></i>Doppler Detection
                                     </button>
-
-
-
-
-                                    
- <!-- New Downsampling Tab -->
-              <li class="nav-item" role="presentation">
-                <button class="nav-link" id="downsampling-tab" data-bs-toggle="tab" data-bs-target="#downsampling-tab-pane" type="button" role="tab" aria-controls="downsampling-tab-pane" aria-selected="false">
-                  <i class="bi-soundwave me-2"></i>Downsampling Tool
-                </button>
-
-
-
-
-
-
-
                                 </li>
                             </ul>
 
@@ -215,13 +202,13 @@
                                                         </div>
                                                     </div>
 
-                                                        <div class="row mb-4"></div>                                             
+                                                    <div class="row mb-4">                                             
                                                         <div class="col-12">
                                                             <div class="mb-3">
                                                                 <label for="samplingRate" class="form-label">Sampling Frequency (Hz)</label>
-                                                    <input type="range" class="form-range" id="samplingRate"
-                                                        min="4000" max="44000" step="50" value="44000"
-                                                        oninput="updateFsLabel(this.value)">
+                                                                <input type="range" class="form-range" id="samplingRate"
+                                                                    min="4000" max="44000" step="50" value="44000"
+                                                                    oninput="updateFsLabel(this.value)">
                                                                 <div class="d-flex justify-content-between">
                                                                     <small>4000 Hz</small>
                                                                     <small>44,000 Hz</small>
@@ -232,7 +219,6 @@
                                                             </div>
                                                         </div>
                                                     </div>
-
 
                                                     <div class="text-center mb-4">
                                                         <button class="btn custom-btn me-3" type="button" onclick="generateDopplerSound()">
@@ -289,6 +275,126 @@
                                     </div>
                                 </div>
 
+                                <!-- Add these alerts at the top of your downsampling tab -->
+<div id="errorAlert" class="alert alert-danger alert-dismissible fade show" style="display: none;">
+    <strong>Error:</strong> <span id="errorMessage"></span>
+    <button type="button" class="btn-close" onclick="document.getElementById('errorAlert').style.display='none'"></button>
+</div>
+
+<div id="successAlert" class="alert alert-success alert-dismissible fade show" style="display: none;">
+    <strong>Success:</strong> <span id="successMessage"></span>
+    <button type="button" class="btn-close" onclick="document.getElementById('successAlert').style.display='none'"></button>
+</div>
+
+<!-- Processing indicator -->
+<div id="processingInfo" class="alert alert-info processing-indicator mb-3" style="display: none;">
+    <div class="d-flex align-items-center">
+        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+        <span>Processing audio...</span>
+    </div>
+</div>
+
+                                <!-- Downsampling Tab - MOVED UP -->
+                                <div class="tab-pane fade" id="downsampling-tab-pane" role="tabpanel" aria-labelledby="downsampling-tab" tabindex="0">
+                                    <div class="row justify-content-center">
+                                        <div class="col-lg-10">
+                                            <div class="custom-block bg-white shadow-lg">
+                                                <div class="custom-block-content p-4">
+                                                    <h4 class="mb-4">🎶 Doppler Downsampling Tool</h4>
+
+                                                    <!-- Alerts -->
+                                                    <div id="errorAlert" class="alert alert-danger alert-dismissible fade show" style="display: none;">
+                                                        <strong>Error:</strong> <span id="errorMessage"></span>
+                                                        <button type="button" class="btn-close" onclick="document.getElementById('errorAlert').style.display='none'"></button>
+                                                    </div>
+
+                                                    <div id="successAlert" class="alert alert-success alert-dismissible fade show" style="display: none;">
+                                                        <strong>Success:</strong> <span id="successMessage"></span>
+                                                        <button type="button" class="btn-close" onclick="document.getElementById('successAlert').style.display='none'"></button>
+                                                    </div>
+
+                                                    <div class="downsampling-controls mb-4">
+                                                        <!-- Upload Section -->
+                                                        <div class="row mb-4">
+                                                            <div class="col-md-8">
+                                                                <label class="form-label">Upload Audio File</label>
+                                                                <input type="file" id="fileInput" class="form-control" accept=".wav">
+                                                            </div>
+                                                            <div class="col-md-4 d-flex align-items-end">
+                                                                <button class="btn custom-btn w-100" onclick="doppler_downsampling_Tool.uploadFile()">
+                                                                    <i class="bi-upload me-2"></i>Upload
+                                                                </button>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Processing Indicator -->
+                                                        <div id="processingInfo" class="alert alert-info processing-indicator mb-3" style="display: none;">
+                                                            <div class="d-flex align-items-center">
+                                                                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                                                                <span>Processing audio...</span>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Sample Rate Control -->
+                                                        <div class="row mb-4">
+                                                            <div class="col-12">
+                                                                <label class="form-label">Target Sample Rate: <span id="srVal" class="fw-bold text-primary">16000</span> Hz</label>
+                                                                <input type="range" class="form-range" id="slider" min="100" max="44000" step="100" value="16000"
+                                                                       oninput="doppler_downsampling_Tool.updateSR(this.value)">
+                                                                <div class="d-flex justify-content-between text-muted small">
+                                                                    <span>100 Hz</span>
+                                                                    <span>44,000 Hz</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Audio Player -->
+                                                        <div class="row mb-4">
+                                                            <div class="col-12">
+                                                                <label class="form-label">Audio Preview</label>
+                                                                <audio id="player" controls class="w-100">
+                                                                    Your browser does not support the audio element.
+                                                                </audio>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Waveform Display -->
+                                                        <div class="row mb-4">
+                                                            <div class="col-12">
+                                                                <label class="form-label">Waveform Visualization</label>
+                                                                <canvas id="waveCanvas" width="600" height="200"></canvas>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Processing Info -->
+                                                        <div class="row">
+                                                            <div class="col-12">
+                                                                <p id="result" class="text-muted text-center mt-2"></p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Download Button -->
+                                                    <div class="text-center">
+                                                        <button id="downloadBtn" class="btn custom-border-btn" onclick="doppler_downsampling_Tool.downloadAudio()" style="display: none;">
+                                                            <i class="bi-download me-2"></i>Download Processed Audio
+                                                        </button>
+                                                    </div>
+
+                                                    <!-- Tool Description -->
+                                                    <div class="mt-4 p-3 bg-light rounded">
+                                                        <h6>About Downsampling</h6>
+                                                        <p class="small text-muted mb-0">
+                                                            This tool allows you to reduce the sample rate of audio files while maintaining audio quality.
+                                                            Useful for reducing file size, simulating low-quality recordings, or preparing audio for specific applications.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <!-- Detection Tab -->
                                 <div class="tab-pane fade" id="detection-tab-pane" role="tabpanel" aria-labelledby="detection-tab" tabindex="0">
                                     <div class="row justify-content-center">
@@ -329,66 +435,63 @@
                                                     </div>
 
                                                     <!-- Results Section -->
-                                                       <!-- In the detection tab, replace the results section with this: -->
-                                                            <div id="resultsSection" class="d-none">
-                                                                <h5 class="mb-3">Detection Results</h5>
+                                                    <div id="resultsSection" class="d-none">
+                                                        <h5 class="mb-3">Detection Results</h5>
 
-                                                                <div class="row mb-4">
-                                                                    <div class="col-md-6">
-                                                                        <div class="p-3 detection-results rounded h-100">
-                                                                            <h6>Doppler Detection Analysis</h6>
-                                                                            <div id="detectionResult">
-                                                                                <!-- Results will be populated here -->
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="col-md-6">
-                                                                        <div class="p-3 bg-light rounded h-100">
-                                                                            <h6>Frequency & Velocity Analysis</h6>
-                                                                            <div id="frequencyAnalysis" class="small mb-3">
-                                                                                <!-- Analysis results -->
-                                                                            </div>
-                                                                            <button class="btn btn-outline-primary btn-sm w-100" onclick="showDetailedAnalysis()">
-                                                                                <i class="bi-graph-up me-2"></i>View Detailed Analysis
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-
-                                                                <div class="analysis-chart">
-                                                                    <h6>Frequency vs Time Analysis</h6>
-                                                                    <canvas id="analysisCanvas" width="100%" height="200"></canvas>
-                                                                </div>
-
-                                                                <!-- Additional Analysis Info -->
-                                                                <div class="row mt-3">
-                                                                    <div class="col-md-4">
-                                                                        <div class="card text-center">
-                                                                            <div class="card-body">
-                                                                                <h6 class="card-title">Approach Frequency</h6>
-                                                                                <h4 class="text-danger" id="approachFreq">-- Hz</h4>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="col-md-4">
-                                                                        <div class="card text-center">
-                                                                            <div class="card-body">
-                                                                                <h6 class="card-title">Recede Frequency</h6>
-                                                                                <h4 class="text-primary" id="recedeFreq">-- Hz</h4>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="col-md-4">
-                                                                        <div class="card text-center">
-                                                                            <div class="card-body">
-                                                                                <h6 class="card-title">Estimated Speed</h6>
-                                                                                <h4 class="text-success" id="estimatedSpeed">-- km/h</h4>
-                                                                            </div>
-                                                                        </div>
+                                                        <div class="row mb-4">
+                                                            <div class="col-md-6">
+                                                                <div class="p-3 detection-results rounded h-100">
+                                                                    <h6>Doppler Detection Analysis</h6>
+                                                                    <div id="detectionResult">
+                                                                        <!-- Results will be populated here -->
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                        
+                                                            <div class="col-md-6">
+                                                                <div class="p-3 bg-light rounded h-100">
+                                                                    <h6>Frequency & Velocity Analysis</h6>
+                                                                    <div id="frequencyAnalysis" class="small mb-3">
+                                                                        <!-- Analysis results -->
+                                                                    </div>
+                                                                    <button class="btn btn-outline-primary btn-sm w-100" onclick="showDetailedAnalysis()">
+                                                                        <i class="bi-graph-up me-2"></i>View Detailed Analysis
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="analysis-chart">
+                                                            <h6>Frequency vs Time Analysis</h6>
+                                                            <canvas id="analysisCanvas" width="100%" height="200"></canvas>
+                                                        </div>
+
+                                                        <!-- Additional Analysis Info -->
+                                                        <div class="row mt-3">
+                                                            <div class="col-md-4">
+                                                                <div class="card text-center">
+                                                                    <div class="card-body">
+                                                                        <h6 class="card-title">Approach Frequency</h6>
+                                                                        <h4 class="text-danger" id="approachFreq">-- Hz</h4>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="card text-center">
+                                                                    <div class="card-body">
+                                                                        <h6 class="card-title">Recede Frequency</h6>
+                                                                        <h4 class="text-primary" id="recedeFreq">-- Hz</h4>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="card text-center">
+                                                                    <div class="card-body">
+                                                                        <h6 class="card-title">Estimated Speed</h6>
+                                                                        <h4 class="text-success" id="estimatedSpeed">-- km/h</h4>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -400,124 +503,6 @@
                     </div>
                 </div>
             </section>
-
-
-
-
-
-
-            
-
-<!-- Downsampling Tab -->
-<div class="tab-pane fade" id="downsampling-tab-pane" role="tabpanel" aria-labelledby="downsampling-tab" tabindex="0">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <div class="custom-block bg-white shadow-lg">
-                <div class="custom-block-content p-4">
-                    <h4 class="mb-4">🎶 Doppler Downsampling Tool</h4>
-
-                    <div class="downsampling-controls mb-4">
-                        <!-- Upload Section -->
-                        <div class="row mb-4">
-                            <div class="col-md-8">
-                                <label class="form-label">Upload Audio File</label>
-                                <input type="file" id="fileInput" class="form-control" accept=".wav">
-                            </div>
-                            <div class="col-md-4 d-flex align-items-end">
-                                <button class="btn custom-btn w-100" onclick="doppler_downsampling_Tool.uploadFile()">
-                                    <i class="bi-upload me-2"></i>Upload
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Processing Indicator -->
-                        <div id="processingInfo" class="alert alert-info processing-indicator mb-3" style="display: none;">
-                            <div class="d-flex align-items-center">
-                                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-                                <span>Processing audio...</span>
-                            </div>
-                        </div>
-
-                        <!-- Sample Rate Control -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <label class="form-label">Target Sample Rate: <span id="srVal" class="fw-bold text-primary">16000</span> Hz</label>
-                                <input type="range" class="form-range" id="slider" min="100" max="44000" step="100" value="16000"
-                                       oninput="doppler_downsampling_Tool.updateSR(this.value)">
-                                <div class="d-flex justify-content-between text-muted small">
-                                    <span>100 Hz</span>
-                                    <span>44,000 Hz</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Audio Player -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <label class="form-label">Audio Preview</label>
-                                <audio id="player" controls class="w-100"></audio>
-                            </div>
-                        </div>
-
-                        <!-- Waveform Display -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <label class="form-label">Waveform Visualization</label>
-                                <canvas id="waveCanvas" width="600" height="200"></canvas>
-                            </div>
-                        </div>
-
-                        <!-- Processing Info -->
-                        <div class="row">
-                            <div class="col-12">
-                                <p id="result" class="text-muted text-center mt-2"></p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Download Button -->
-                    <div class="text-center">
-                        <button id="downloadBtn" class="btn custom-border-btn" onclick="doppler_downsampling_Tool.downloadAudio()" style="display: none;">
-                            <i class="bi-download me-2"></i>Download Processed Audio
-                        </button>
-                    </div>
-
-                    <!-- Tool Description -->
-                    <div class="mt-4 p-3 bg-light rounded">
-                        <h6>About Downsampling</h6>
-                        <p class="small text-muted mb-0">
-                            This tool allows you to reduce the sample rate of audio files while maintaining audio quality.
-                            Useful for reducing file size, simulating low-quality recordings, or preparing audio for specific applications.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-<!-- Add this to your downsampling tab -->
-<div id="errorAlert" class="alert alert-danger alert-dismissible fade show" style="display: none;">
-    <strong>Error:</strong> <span id="errorMessage"></span>
-    <button type="button" class="btn-close" onclick="document.getElementById('errorAlert').style.display='none'"></button>
-</div>
-
-<div id="successAlert" class="alert alert-success alert-dismissible fade show" style="display: none;">
-    <strong>Success:</strong> <span id="successMessage"></span>
-    <button type="button" class="btn-close" onclick="document.getElementById('successAlert').style.display='none'"></button>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
 
             <!-- Modals -->
             <div class="modal fade" id="spectrogramModal" tabindex="-1">
@@ -575,13 +560,324 @@
         <script src="js/spectro.js"></script>
         <script src="js/doppler-analysis.js"></script>
 
-         <script>
-function updateFsLabel(value) {
-    document.getElementById('fsValue').textContent = value;
-}
-</script>
+        <script>
+            function updateFsLabel(value) {
+                document.getElementById('fsValue').textContent = value;
+            }
 
+            // Enhanced Downsampling Tool
+            const doppler_downsampling_Tool = {
+                filename: "",
+                processedUrl: "",
 
-       
+                init: function() {
+                    console.log('🎵 Downsampling tool initialized');
+                    this.checkElements();
+                    this.setupEventListeners();
+                },
+
+                checkElements: function() {
+                    const elements = ['fileInput', 'player', 'downloadBtn', 'waveCanvas', 'result'];
+                    elements.forEach(id => {
+                        const element = document.getElementById(id);
+                        if (!element) {
+                            console.error(`❌ Missing element: ${id}`);
+                        } else {
+                            console.log(`✅ Found element: ${id}`);
+                        }
+                    });
+                },
+
+                setupEventListeners: function() {
+                    // File input change event
+                    const fileInput = document.getElementById('fileInput');
+                    if (fileInput) {
+                        fileInput.addEventListener('change', (e) => {
+                            if (e.target.files.length > 0) {
+                                const file = e.target.files[0];
+                                console.log(`📁 File selected: ${file.name}`);
+                                this.showAlert(`File selected: ${file.name}`, 'success');
+                            }
+                        });
+                    }
+                },
+
+                showAlert: function(message, type) {
+                    if (type === 'error') {
+                        document.getElementById('errorMessage').textContent = message;
+                        document.getElementById('errorAlert').style.display = 'block';
+                    } else {
+                        document.getElementById('successMessage').textContent = message;
+                        document.getElementById('successAlert').style.display = 'block';
+                    }
+                    
+                    // Auto-hide after 5 seconds
+                    setTimeout(() => {
+                        document.getElementById('errorAlert').style.display = 'none';
+                        document.getElementById('successAlert').style.display = 'none';
+                    }, 5000);
+                },
+
+                showProcessing: function(message) {
+                    const processingInfo = document.getElementById('processingInfo');
+                    if (processingInfo) {
+                        processingInfo.style.display = 'block';
+                        if (message) {
+                            processingInfo.querySelector('span').textContent = message;
+                        }
+                    }
+                },
+
+                hideProcessing: function() {
+                    const processingInfo = document.getElementById('processingInfo');
+                    if (processingInfo) {
+                        processingInfo.style.display = 'none';
+                    }
+                },
+
+                uploadFile: async function() {
+                    const fileInput = document.getElementById('fileInput');
+                    if (!fileInput) {
+                        this.showAlert("File input not found!", 'error');
+                        return;
+                    }
+
+                    const file = fileInput.files[0];
+                    if (!file) { 
+                        this.showAlert("Select a file first!", 'error');
+                        return; 
+                    }
+
+                    // Validate file type
+                    if (!file.name.toLowerCase().endsWith('.wav')) {
+                        this.showAlert("Please upload a WAV file", 'error');
+                        return;
+                    }
+
+                    console.log('📤 Uploading file:', file.name);
+                    this.showProcessing("Uploading file...");
+
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    try {
+                        const res = await fetch('http://127.0.0.1:5000/doppler-downsampling-upload', { 
+                            method: 'POST', 
+                            body: formData 
+                        });
+
+                        if (!res.ok) {
+                            throw new Error(`Upload failed: ${res.status} ${res.statusText}`);
+                        }
+
+                        const data = await res.json();
+
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+
+                        this.filename = data.filename;
+                        this.showAlert("✅ File uploaded successfully!", 'success');
+                        this.hideProcessing();
+
+                        // Auto-process with current sample rate
+                        setTimeout(() => {
+                            const sr = document.getElementById('slider').value;
+                            console.log(`🔄 Auto-processing with sample rate: ${sr} Hz`);
+                            this.updateSR(sr);
+                        }, 500);
+
+                    } catch (error) {
+                        console.error('❌ Upload failed:', error);
+                        this.showAlert("Upload failed: " + error.message, 'error');
+                        this.hideProcessing();
+                    }
+                },
+
+                updateSR: async function(sr) {
+                    if (!this.filename) { 
+                        this.showAlert("Please upload a file first!", 'error');
+                        return; 
+                    }
+
+                    console.log(`🎚️ Setting sample rate to: ${sr} Hz`);
+                    document.getElementById("srVal").innerText = sr;
+                    this.showProcessing(`Downsampling to ${sr} Hz...`);
+
+                    try {
+                        const requestBody = { 
+                            filename: this.filename, 
+                            sample_rate: parseInt(sr) 
+                        };
+                        
+                        const res = await fetch('http://127.0.0.1:5000/doppler-downsampling', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(requestBody)
+                        });
+
+                        if (!res.ok) {
+                            throw new Error(`Processing failed: ${res.status} ${res.statusText}`);
+                        }
+
+                        const data = await res.json();
+
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+
+                        // Update audio player
+
+                        const player = document.getElementById('player');
+                        if (!player) {
+                            throw new Error("Audio player element not found");
+                        }
+
+                        player.src = data.audio_url;
+                        this.processedUrl = data.audio_url;
+
+                        // Show download button
+                        const downloadBtn = document.getElementById('downloadBtn');
+                        if (downloadBtn) {
+                            downloadBtn.style.display = "inline-block";
+                        }
+
+                        this.showAlert(`✅ Downsampled to ${data.sample_rate} Hz - Ready to play!`, 'success');
+                        this.hideProcessing();
+                        this.drawWaveform(data.audio_url);
+
+                        // Debug info
+                        console.log('🎵 Audio source set to:', data.audio_url);
+
+                    } catch (error) {
+                        console.error('❌ Processing failed:', error);
+                        this.showAlert("Processing failed: " + error.message, 'error');
+                        this.hideProcessing();
+                    }
+                },
+
+                downloadAudio: function() {
+                    if (!this.processedUrl) {
+                        this.showAlert("No processed audio available", 'error');
+                        return;
+                    }
+                    
+                    const filename = this.processedUrl.split('/').pop();
+                    const downloadUrl = `http://127.0.0.1:5000/doppler-downsampling-download/${filename}`;
+                    
+                    console.log('💾 Downloading:', downloadUrl);
+                    
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = `downsampled_${filename}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                },
+
+                drawWaveform: async function(url) {
+                    try {
+                        const filename = url.split('/').pop();
+                        const response = await fetch(`http://127.0.0.1:5000/doppler-downsampling-waveform/${filename}`);
+                        
+                        if (!response.ok) {
+                            throw new Error(`Waveform fetch failed: ${response.status}`);
+                        }
+                        
+                        const data = await response.json();
+
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+
+                        const canvas = document.getElementById("waveCanvas");
+                        if (!canvas) {
+                            throw new Error("Waveform canvas not found");
+                        }
+
+                        const ctx = canvas.getContext("2d");
+                        const width = canvas.width;
+                        const height = canvas.height;
+                        
+                        // Clear canvas
+                        ctx.clearRect(0, 0, width, height);
+                        
+                        // Draw background
+                        ctx.fillStyle = "#f8f9fa";
+                        ctx.fillRect(0, 0, width, height);
+
+                        // Draw waveform
+                        const waveform = data.waveform;
+                        const len = waveform.length;
+                        const step = Math.ceil(len / width);
+                        const amp = height / 2;
+
+                        ctx.beginPath();
+                        ctx.moveTo(0, amp);
+                        
+                        for (let i = 0; i < width; i++) {
+                            const index = Math.min(i * step, len - 1);
+                            const val = waveform[index] || 0;
+                            ctx.lineTo(i, amp - val * amp * 0.8);
+                        }
+
+                        ctx.strokeStyle = "#0078d7";
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+
+                        // Draw info
+                        ctx.fillStyle = "#333";
+                        ctx.font = "14px Arial";
+                        ctx.fillText(`Waveform at ${data.sample_rate} Hz`, 10, 20);
+
+                    } catch (error) {
+                        console.error("Waveform drawing failed:", error);
+                        this.drawErrorOnCanvas("Unable to draw waveform");
+                    }
+                },
+
+                drawErrorOnCanvas: function(message) {
+                    const canvas = document.getElementById("waveCanvas");
+                    if (!canvas) return;
+                    
+                    const ctx = canvas.getContext("2d");
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    
+                    ctx.fillStyle = "red";
+                    ctx.font = "14px Arial";
+                    ctx.textAlign = "center";
+                    ctx.fillText("❌ " + message, canvas.width / 2, canvas.height / 2);
+                }
+            };
+
+            // Initialize when page loads
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('🚀 Initializing Doppler Analysis Application...');
+                doppler_downsampling_Tool.init();
+                
+                if (typeof initializeDopplerApp === 'function') {
+                    initializeDopplerApp();
+                }
+                
+                console.log('✅ Doppler Analysis Application fully initialized');
+            });
+
+            // Temporary fix for jQuery scroll errors
+            $(document).ready(function() {
+                // Override problematic scroll function
+                $('a.js-scroll-trigger[href*="#"]:not([href="#"])').click(function() {
+                    if (location.pathname.replace(/^\//, '') == this.pathname.replace(/^\//, '') && location.hostname == this.hostname) {
+                        var target = $(this.hash);
+                        target = target.length ? target : $('[name=' + this.hash.slice(1) + ']');
+                        if (target.length) {
+                            $('html, body').animate({
+                                scrollTop: (target.offset().top - 70)
+                            }, 1000, "easeInOutExpo");
+                            return false;
+                        }
+                    }
+                });
+            });
+        </script>
     </body>
 </html>
