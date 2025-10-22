@@ -113,6 +113,15 @@ except Exception as e:
     processor = None
     model = None
 
+
+# doppler model
+# Define upload and processed folders for downsampling
+DOPPLER_DOWNSAMPLING_UPLOAD_FOLDER = 'uploads/doppler_downsampling'
+DOPPLER_DOWNSAMPLING_PROCESSED_FOLDER = 'processed/doppler_downsampling'
+
+# Create directories if they don't exist
+os.makedirs(DOPPLER_DOWNSAMPLING_UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(DOPPLER_DOWNSAMPLING_PROCESSED_FOLDER, exist_ok=True)
 # =============================================================================
 # Helper Functions
 # =============================================================================
@@ -1470,7 +1479,7 @@ def simulate():
     v_car = float(data['speed'])
     d_perp = float(data['dist'])
 
-    fs = 44100
+    fs = int(data.get('fs', 44000))
     c = 343.0
     alpha = 1.0
     x_start = -200.0
@@ -1658,6 +1667,116 @@ def upload_car():
     except Exception as e:
         return jsonify({"error": f"Error processing file: {str(e)}"}), 500
 
+
+
+
+# ==================== DOWNSAMPLING ROUTES ====================
+
+# =============================================================================
+# Doppler Downsampling Routes
+# =============================================================================
+
+@app.route("/doppler-downsampling-upload", methods=["POST"])
+def upload_doppler_downsampling_audio():
+    """Upload audio file for downsampling"""
+    try:
+        if "file" not in request.files:
+            return jsonify({"error": "No file uploaded"}), 400
+
+        file = request.files["file"]
+        if file.filename == "":
+            return jsonify({"error": "No file selected"}), 400
+
+        # Validate file type
+        if not file.filename.lower().endswith('.wav'):
+            return jsonify({"error": "Only WAV files are supported for downsampling"}), 400
+
+        # Secure filename and save
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(DOPPLER_DOWNSAMPLING_UPLOAD_FOLDER, filename)
+        file.save(file_path)
+        
+        print(f"📁 Doppler downsampling file saved: {file_path}")
+        return jsonify({"filename": filename})
+        
+    except Exception as e:
+        return jsonify({"error": f"Upload failed: {str(e)}"}), 500
+
+@app.route("/doppler-downsampling", methods=["POST"])
+def doppler_downsample():
+    """Downsample audio to target sample rate"""
+    try:
+        data = request.get_json()
+        if not data or "filename" not in data or "sample_rate" not in data:
+            return jsonify({"error": "Missing 'filename' or 'sample_rate'"}), 400
+
+        filename = os.path.basename(data["filename"])
+        new_sr = int(data["sample_rate"])
+
+        if new_sr <= 0:
+            return jsonify({"error": "Invalid sample rate"}), 400
+
+        in_path = os.path.join(DOPPLER_DOWNSAMPLING_UPLOAD_FOLDER, filename)
+        if not os.path.exists(in_path):
+            return jsonify({"error": "File not found"}), 404
+
+        # Load and resample audio
+        waveform, orig_sr = torchaudio.load(in_path)
+        aliased = F.resample(waveform, orig_freq=orig_sr, new_freq=new_sr)
+
+        # Save processed file
+        out_filename = f"{new_sr}_{filename}"
+        out_path = os.path.join(DOPPLER_DOWNSAMPLING_PROCESSED_FOLDER, out_filename)
+        torchaudio.save(out_path, aliased, new_sr)
+
+        return jsonify({
+            "sample_rate": new_sr,
+            "audio_url": f"/doppler-downsampling-processed/{out_filename}",
+            "filename": out_filename
+        })
+
+    except Exception as e:
+        print(f"❌ Downsampling error: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/doppler-downsampling-processed/<filename>")
+def serve_doppler_downsampling_audio(filename):
+    """Serve processed downsampled audio"""
+    return send_from_directory(DOPPLER_DOWNSAMPLING_PROCESSED_FOLDER, filename)
+
+@app.route("/doppler-downsampling-download/<filename>")
+def download_dopple_downsampling_audio(filename):
+    """Download processed downsampled audio"""
+    safe_name = os.path.basename(filename)
+    file_path = os.path.join(DOPPLER_DOWNSAMPLING_PROCESSED_FOLDER, safe_name)
+    if not os.path.exists(file_path):
+        return jsonify({"error": "File not found"}), 404
+    return send_from_directory(DOPPLER_DOWNSAMPLING_PROCESSED_FOLDER, safe_name, as_attachment=True)
+
+@app.route("/doppler-downsampling-waveform/<filename>")
+def get_doppler_downsampling_waveform(filename):
+    """Get waveform data for visualization"""
+    try:
+        safe_name = os.path.basename(filename)
+        file_path = os.path.join(DOPPLER_DOWNSAMPLING_PROCESSED_FOLDER, safe_name)
+        if not os.path.exists(file_path):
+            return jsonify({"error": "File not found"}), 404
+
+        waveform, sr = torchaudio.load(file_path)
+        data = waveform[0].tolist()
+        
+        # Downsample waveform for efficient frontend rendering
+        max_points = 2000
+        step = max(1, len(data) // max_points)
+        downsampled = data[::step]
+
+        return jsonify({
+            "sample_rate": sr,
+            "waveform": downsampled
+        })
+    except Exception as e:
+        return jsonify({"error": f"Waveform extraction failed: {str(e)}"}), 500
+        
 # =============================================================================
 # Drone Analysis Endpoints
 # =============================================================================
