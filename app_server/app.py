@@ -30,13 +30,15 @@ import webbrowser
 import threading
 import os
 from transformers import AutoProcessor, AutoModelForAudioClassification
-
+from voicefixer import VoiceFixer
 from voice_model import ECAPA_gender
 import torch.nn.functional as F
 import  torchaudio,torchaudio.functional as F
 from typing import Optional
 
 from model_detect_antialiasing import predict_label
+
+import uuid
 
 # Import your model functions
 try:
@@ -467,30 +469,49 @@ def upload_drone_audio():
         file.save(file_path)
 
         # Get audio info
-        y, sr = librosa.load(file_path, sr=None)
-        duration = len(y) / sr
-
-        return jsonify({
-            "success": True,
-            "filename": filename,
-            "audio_info": {
+        try:
+            y, sr = librosa.load(file_path, sr=None)
+            duration = len(y) / sr
+            
+            audio_info = {
                 "original_sample_rate": sr,
                 "duration_seconds": round(duration, 2),
                 "samples": len(y),
                 "file_size": os.path.getsize(file_path)
             }
+        except Exception as audio_error:
+            print(f"⚠️ Could not get audio info: {audio_error}")
+            audio_info = {
+                "original_sample_rate": "unknown",
+                "duration_seconds": "unknown", 
+                "samples": "unknown",
+                "file_size": os.path.getsize(file_path)
+            }
+
+        return jsonify({
+            "success": True,
+            "filename": filename,
+            "audio_info": audio_info
         })
 
     except Exception as e:
+        print(f"❌ Upload failed: {str(e)}")
         return jsonify({"error": f"Upload failed: {str(e)}"}), 500
 
 @app.route("/api/drone-downsample/process", methods=["POST"])
 def drone_downsample():
     """Downsample audio and get real-time predictions"""
     try:
+        # Check if request is JSON
+        if not request.is_json:
+            return jsonify({"error": "Content-Type must be application/json"}), 415
+            
         data = request.get_json()
+        
+        if not data:
+            return jsonify({"error": "No JSON data provided"}), 400
 
-        if not data or "filename" not in data or "sample_rate" not in data:
+        if "filename" not in data or "sample_rate" not in data:
             return jsonify({"error": "Missing 'filename' or 'sample_rate'"}), 400
 
         filename = os.path.basename(data["filename"])
@@ -504,36 +525,40 @@ def drone_downsample():
         if not os.path.exists(in_path):
             return jsonify({"error": "File not found"}), 404
 
-        # Load and downsample audio
-        waveform, orig_sr = torchaudio.load(in_path)
-        
-        print(f"🔄 Downsampling: {orig_sr}Hz → {new_sr}Hz")
-        
-        # Resample using torchaudio
-        downsampled = F.resample(waveform, orig_freq=orig_sr, new_freq=new_sr)
+        try:
+            # Load and downsample audio
+            waveform, orig_sr = torchaudio.load(in_path)
+            
+            print(f"🔄 Downsampling: {orig_sr}Hz → {new_sr}Hz")
+            
+            # Resample using torchaudio
+            downsampled = F.resample(waveform, orig_freq=orig_sr, new_freq=new_sr)
 
-        # Save processed audio with unique name
-        out_filename = f"downsampled_{new_sr}hz_{filename}"
-        out_path = os.path.join(PROCESSED_FOLDER, out_filename)
-        torchaudio.save(out_path, downsampled, new_sr)
+            # Save processed audio with unique name
+            out_filename = f"downsampled_{new_sr}hz_{filename}"
+            out_path = os.path.join(PROCESSED_FOLDER, out_filename)
+            torchaudio.save(out_path, downsampled, new_sr)
 
-        # Use your EXISTING predict_drone function
-        label, confidence = predict_drone(out_path)
+            # Use your EXISTING predict_drone function
+            label, confidence = predict_drone(out_path)
 
-        return jsonify({
-            "success": True,
-            "sample_rate": new_sr,
-            "label": label,
-            "confidence": round(confidence, 4),
-            "confidence_percent": round(confidence * 100, 1),
-            "audio_url": f"/api/drone-downsample/audio/{out_filename}",
-            "message": f"Analysis at {new_sr}Hz completed"
-        })
+            return jsonify({
+                "success": True,
+                "sample_rate": new_sr,
+                "label": label,
+                "confidence": round(confidence, 4),
+                "confidence_percent": round(confidence * 100, 1),
+                "audio_url": f"/api/drone-downsample/audio/{out_filename}",
+                "message": f"Analysis at {new_sr}Hz completed"
+            })
+            
+        except Exception as processing_error:
+            print(f"❌ Audio processing error: {str(processing_error)}")
+            return jsonify({"error": f"Audio processing failed: {str(processing_error)}"}), 500
 
     except Exception as e:
         print(f"❌ Downsampling error: {str(e)}")
         return jsonify({"error": f"Processing failed: {str(e)}"}), 500
-
 @app.route("/api/drone-downsample/audio/<filename>")
 def serve_processed_audio(filename):
     """Serve processed audio files"""
@@ -671,6 +696,524 @@ def predict_voice_gender_ecapa(audio_path):
         print(f"❌ Error type: {type(e).__name__}")
         traceback.print_exc()
         raise Exception(f"Prediction failed: {str(e)}")
+    
+
+    # =============================================================================
+# Audio Downsampling Endpoints with VoiceFixer (Two-Step Process)
+# =============================================================================
+
+# =============================================================================
+# Audio Downsampling Endpoints with VoiceFixer (Two-Step Process)
+# =============================================================================
+
+class AudioDownsampler:
+    def __init__(self):  # FIXED: Changed _init_ to __init__
+        self.supported_formats = ['.wav', '.mp3', '.flac', '.m4a', '.aac']
+        # Initialize VoiceFixer
+        try:
+            from voicefixer import VoiceFixer
+            self.voicefixer = VoiceFixer()
+            print("✅ VoiceFixer initialized successfully")
+        except ImportError:
+            print("❌ VoiceFixer not available. Install with: pip install voicefixer")
+            self.voicefixer = None
+        except Exception as e:
+            print(f"❌ Error initializing VoiceFixer: {e}")
+            self.voicefixer = None
+    
+    def restore_audio_with_voicefixer(self, audio_path, output_path, mode=0):
+        """
+        Restore audio quality using VoiceFixer
+        
+        Args:
+            audio_path: path to degraded audio file
+            output_path: path to save restored audio
+            mode: VoiceFixer mode (0: quality, 1: fast, 2: super fast)
+        """
+        if self.voicefixer is None:
+            raise Exception("VoiceFixer not available")
+        
+        try:
+            print(f"🎵 Restoring audio with VoiceFixer (mode {mode})...")
+            self.voicefixer.restore(input=audio_path, output=output_path, cuda=False, mode=mode)
+            print(f"✅ Audio restored with VoiceFixer: {output_path}")
+            return True
+        except Exception as e:
+            print(f"❌ VoiceFixer restoration failed: {e}")
+            raise Exception(f"Voice restoration failed: {str(e)}")
+    
+    def downsample_audio(self, audio_data, original_sr, target_sr):
+        """
+        Downsampling with intentional aliasing for audible effects
+        Using simple decimation without anti-aliasing filter
+        """
+        # If target sample rate is higher than original, return original with warning
+        if target_sr >= original_sr:
+            print(f"⚠ Target SR {target_sr}Hz >= original {original_sr}Hz, returning original")
+            return audio_data, original_sr
+        
+        # Calculate Nyquist frequency and check for potential aliasing
+        nyquist_original = original_sr / 2
+        nyquist_target = target_sr / 2
+        
+        print(f"🎯 Downsampling: {original_sr}Hz → {target_sr}Hz")
+        print(f"📊 Nyquist: Original={nyquist_original:.1f}Hz, Target={nyquist_target:.1f}Hz")
+        
+        # Calculate decimation factor
+        decimation_factor = original_sr // target_sr
+        
+        if decimation_factor <= 1:
+            print("⚠ Decimation factor too small, using librosa resampling")
+            # Fallback to librosa for small factors
+            downsampled_audio = librosa.resample(
+                y=audio_data,
+                orig_sr=original_sr,
+                target_sr=target_sr,
+                res_type='kaiser_best'
+            )
+        else:
+            # SIMPLE DECIMATION - NO ANTI-ALIASING FILTER (creates aliasing)
+            print(f"🔧 Using decimation factor: {decimation_factor}x")
+            print(f"🚨 INTENTIONAL ALIASING: Frequencies above {nyquist_target:.1f}Hz will alias!")
+            
+            downsampled_audio = audio_data[::decimation_factor]
+        
+        print(f"✅ Downsampling complete with aliasing: {len(audio_data)} samples → {len(downsampled_audio)} samples")
+        return downsampled_audio, target_sr
+    
+    def process_audio_file(self, audio_file, target_sr):
+        """
+        Process uploaded audio file and downsample it (STEP 1)
+        
+        Args:
+            audio_file: uploaded file object
+            target_sr: target sample rate from frontend slider
+            
+        Returns:
+            processed_audio: downsampled audio data
+            new_sr: sample rate of processed audio
+            original_sr: original sample rate
+            audio_info: dictionary with audio metadata
+        """
+        temp_path = None
+        
+        try:
+            print(f"📁 Processing audio file: {audio_file.filename}")
+            
+            # Save the file object to a temporary file first
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_file:
+                audio_file.save(temp_file.name)
+                temp_path = temp_file.name
+            
+            print(f"📁 Temporary file created: {temp_path}")
+            
+            # Load audio from the temporary file
+            audio_data, original_sr = librosa.load(temp_path, sr=None, mono=True)
+            
+            # Get audio information
+            duration = len(audio_data) / original_sr
+            audio_info = {
+                'original_samples': len(audio_data),
+                'original_duration': duration,
+                'original_channels': 1,  # librosa loads as mono
+                'bit_depth': 32,  # librosa loads as float32
+                'rms_energy': float(np.sqrt(np.mean(audio_data**2)))
+            }
+            
+            print(f"📊 Original audio: {original_sr}Hz, {duration:.2f}s, {len(audio_data)} samples")
+            
+            # Downsample audio
+            processed_audio, new_sr = self.downsample_audio(audio_data, original_sr, target_sr)
+            
+            # Update audio info for downsampled version
+            audio_info.update({
+                'downsampled_samples': len(processed_audio),
+                'downsampled_duration': len(processed_audio) / new_sr,
+                'downsampling_ratio': new_sr / original_sr,
+                'nyquist_frequency': new_sr / 2,
+                'restoration_applied': False
+            })
+            
+            return processed_audio, new_sr, original_sr, audio_info
+            
+        except Exception as e:
+            print(f"❌ Error processing audio file: {str(e)}")
+            traceback.print_exc()
+            raise Exception(f"Audio processing failed: {str(e)}")
+        finally:
+            # Always clean up the temporary file
+            if temp_path and os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                    print(f"🧹 Cleaned up temporary file: {temp_path}")
+                except Exception as cleanup_error:
+                    print(f"⚠ Could not clean up temporary file: {cleanup_error}")
+    
+    def apply_voicefixer_to_file(self, input_file_path):
+        """
+        Apply VoiceFixer restoration to an existing file (STEP 2)
+        
+        Args:
+            input_file_path: path to the downsampled audio file
+            
+        Returns:
+            restored_path: path to restored audio file
+            restored_sr: sample rate of restored audio
+        """
+        if self.voicefixer is None:
+            raise Exception("VoiceFixer not available")
+        
+        try:
+            # Apply VoiceFixer to the downsampled file
+            restored_path = tempfile.NamedTemporaryFile(delete=False, suffix='_restored.wav').name
+            self.restore_audio_with_voicefixer(input_file_path, restored_path, mode=0)
+            
+            # Load restored audio to get sample rate
+            restored_audio, restored_sr = librosa.load(restored_path, sr=None, mono=True)
+            
+            print(f"✅ VoiceFixer restoration applied to {input_file_path}")
+            return restored_path, restored_sr
+            
+        except Exception as e:
+            print(f"❌ VoiceFixer restoration failed: {str(e)}")
+            raise Exception(f"Voice restoration failed: {str(e)}")
+
+    def is_voicefixer_available(self):
+        """Check if VoiceFixer is available"""
+        return self.voicefixer is not None
+                    
+# Initialize downsampler
+downsampler = AudioDownsampler()
+
+# Store temporary file paths in memory (in production, use a proper cache)
+downsampled_files_cache = {}
+
+@app.route('/api/downsample-audio', methods=['POST'])
+def downsample_audio():
+    """
+    STEP 1: API endpoint for downsampling audio files (without VoiceFixer)
+    """
+    try:
+        print("🎯 Step 1: Downsampling endpoint called")
+        
+        # Check if file is present
+        if 'audio' not in request.files:
+            return jsonify({'error': 'No audio file provided'}), 400
+        
+        audio_file = request.files['audio']
+        if audio_file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+        
+        # Check if sample rate is provided
+        target_sr = request.form.get('target_sr')
+        if not target_sr:
+            return jsonify({'error': 'No target sample rate provided'}), 400
+        
+        target_sr = int(target_sr)
+        
+        # Update validation to allow lower sample rates
+        if target_sr < 1000:  # Allow down to 1000Hz for extreme effects
+            return jsonify({'error': 'Sample rate too low (min 1000 Hz)'}), 400
+        if target_sr > 192000:
+            return jsonify({'error': 'Sample rate too high (max 192000 Hz)'}), 400
+        
+        # Validate file type
+        if not allowed_audio_file(audio_file.filename):
+            return jsonify({'error': f'Invalid file type. Allowed: {ALLOWED_AUDIO_EXTENSIONS}'}), 400
+        
+        # Process audio file (STEP 1 - Downsampling only)
+        try:
+            processed_audio, new_sr, original_sr, audio_info = downsampler.process_audio_file(
+                audio_file, target_sr
+            )
+            
+            # Create temporary file for downsampled audio
+            with tempfile.NamedTemporaryFile(delete=False, suffix='_downsampled.wav') as temp_output:
+                sf.write(temp_output.name, processed_audio, new_sr)
+                downsampled_path = temp_output.name
+            
+            # Store file path in cache for potential restoration
+            file_id = str(uuid.uuid4())
+            downsampled_files_cache[file_id] = downsampled_path
+            
+            # Generate waveform data for visualization
+            waveform_data = generate_waveform_data(processed_audio, new_sr)
+            
+            # Return processing info
+            response_data = {
+                'success': True,
+                'file_id': file_id,  # For subsequent restoration
+                'file_path': downsampled_path,  # For download
+                'original_sample_rate': original_sr,
+                'new_sample_rate': new_sr,
+                'downsampling_ratio': round(new_sr / original_sr, 4),
+                'nyquist_frequency': new_sr / 2,
+                'audio_duration': len(processed_audio) / new_sr,
+                'audio_info': audio_info,
+                'waveform_data': waveform_data,
+                'quality_assessment': assess_audio_quality(processed_audio, new_sr, original_sr),
+                'restoration_applied': False,
+                'voicefixer_available': downsampler.voicefixer is not None,
+                'message': 'Audio downsampled successfully. You can now apply VoiceFixer restoration if desired.'
+            }
+            
+            print(f"✅ Step 1 complete: {original_sr}Hz → {new_sr}Hz")
+            
+            return jsonify(response_data)
+            
+        except Exception as processing_error:
+            print(f"❌ Audio processing error: {str(processing_error)}")
+            raise processing_error
+        
+    except Exception as e:
+        print(f"❌ Downsampling error: {str(e)}")
+        traceback.print_exc()
+        return jsonify({'error': f'Downsampling failed: {str(e)}'}), 500
+
+@app.route('/api/apply-voicefixer', methods=['POST'])
+def apply_voicefixer():
+    """
+    STEP 2: Apply VoiceFixer restoration to previously downsampled audio
+    """
+    try:
+        print("🎯 Step 2: VoiceFixer restoration endpoint called")
+        
+        data = request.get_json()
+        file_id = data.get('file_id')
+        
+        if not file_id:
+            return jsonify({'error': 'No file ID provided'}), 400
+        
+        if file_id not in downsampled_files_cache:
+            return jsonify({'error': 'File not found or expired'}), 404
+        
+        if downsampler.voicefixer is None:
+            return jsonify({'error': 'VoiceFixer not available'}), 400
+        
+        downsampled_path = downsampled_files_cache[file_id]
+        
+        if not os.path.exists(downsampled_path):
+            return jsonify({'error': 'Downsampled file not found'}), 404
+        
+        # Apply VoiceFixer restoration (STEP 2)
+        try:
+            restored_path, restored_sr = downsampler.apply_voicefixer_to_file(downsampled_path)
+            
+            # Load restored audio for waveform generation
+            restored_audio, _ = librosa.load(restored_path, sr=None, mono=True)
+            waveform_data = generate_waveform_data(restored_audio, restored_sr)
+            
+            # Update cache with restored file
+            downsampled_files_cache[file_id] = restored_path  # Replace with restored file
+            
+            response_data = {
+                'success': True,
+                'file_id': file_id,  # Same file ID, now points to restored file
+                'file_path': restored_path,  # For download
+                'sample_rate': restored_sr,
+                'audio_duration': len(restored_audio) / restored_sr,
+                'waveform_data': waveform_data,
+                'restoration_applied': True,
+                'message': 'VoiceFixer restoration applied successfully'
+            }
+            
+            print(f"✅ Step 2 complete: VoiceFixer restoration applied")
+            
+            return jsonify(response_data)
+            
+        except Exception as restoration_error:
+            print(f"❌ VoiceFixer restoration error: {str(restoration_error)}")
+            raise restoration_error
+        
+    except Exception as e:
+        print(f"❌ VoiceFixer application error: {str(e)}")
+        traceback.print_exc()
+        return jsonify({'error': f'VoiceFixer application failed: {str(e)}'}), 500
+
+@app.route('/api/restore-audio', methods=['POST'])
+def restore_audio():
+    """Restore original audio quality using VoiceFixer (one-step process)"""
+    try:
+        if 'audio' not in request.files:
+            return jsonify({'error': 'No audio file provided'}), 400
+        
+        audio_file = request.files['audio']
+        if audio_file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+        
+        if downsampler.voicefixer is None:
+            return jsonify({'error': 'VoiceFixer not available'}), 400
+        
+        # Save uploaded file temporarily
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_input:
+            audio_file.save(temp_input.name)
+            input_path = temp_input.name
+        
+        # Apply VoiceFixer
+        output_path = tempfile.NamedTemporaryFile(delete=False, suffix='_restored.wav').name
+        downsampler.restore_audio_with_voicefixer(input_path, output_path, mode=0)
+        
+        # Get audio info
+        restored_audio, sr = librosa.load(output_path, sr=None, mono=True)
+        waveform_data = generate_waveform_data(restored_audio, sr)
+        
+        response_data = {
+            'success': True,
+            'file_path': output_path,
+            'sample_rate': sr,
+            'audio_duration': len(restored_audio) / sr,
+            'waveform_data': waveform_data,
+            'restoration_applied': True,
+            'message': 'Audio restored with VoiceFixer'
+        }
+        
+        # Clean up input file
+        if os.path.exists(input_path):
+            os.remove(input_path)
+            
+        return jsonify(response_data)
+        
+    except Exception as e:
+        print(f"❌ Restoration error: {str(e)}")
+        return jsonify({'error': f'Restoration failed: {str(e)}'}), 500
+
+def generate_waveform_data(audio_data, sample_rate, max_points=1000):
+    """
+    Generate simplified waveform data for frontend visualization
+    """
+    # Downsample the waveform for efficient frontend rendering
+    if len(audio_data) > max_points:
+        step = len(audio_data) // max_points
+        audio_data = audio_data[::step]
+    
+    # Normalize for visualization
+    if np.max(np.abs(audio_data)) > 0:
+        audio_data = audio_data / np.max(np.abs(audio_data))
+    
+    return {
+        'samples': audio_data.tolist(),
+        'sample_rate': sample_rate,
+        'duration': len(audio_data) / sample_rate,
+        'point_count': len(audio_data)
+    }
+
+def assess_audio_quality(audio_data, new_sr, original_sr):
+    """
+    Assess audio quality after downsampling
+    """
+    quality = "High"
+    warnings = []
+    
+    # Calculate metrics
+    rms_energy = np.sqrt(np.mean(audio_data**2))
+    dynamic_range = 20 * np.log10(np.max(np.abs(audio_data)) / (np.std(audio_data) + 1e-12))
+    
+    # Quality assessment based on sample rate - UPDATED FOR LOWER RATES
+    if new_sr < 4000:
+        quality = "Extreme Aliasing"
+        warnings.append(f"EXTREME ALIASING - Only frequencies below {new_sr/2:.0f}Hz preserved")
+        warnings.append("Voice will be heavily distorted and robotic")
+    elif new_sr < 8000:
+        quality = "Very Low"
+        warnings.append("Telephone quality - limited frequency response")
+        warnings.append("Heavy aliasing expected")
+    elif new_sr < 16000:
+        quality = "Low"
+        warnings.append("Noticeable quality reduction - speech oriented")
+    elif new_sr < 32000:
+        quality = "Medium"
+        warnings.append("Good for voice, limited for music")
+    elif new_sr < 44100:
+        quality = "Good"
+    else:
+        quality = "High"
+    
+    # Check for potential aliasing
+    nyquist_ratio = new_sr / original_sr
+    if nyquist_ratio < 0.3:
+        warnings.append(f"SEVERE ALIASING - Nyquist frequency only {new_sr/2:.0f}Hz")
+    elif nyquist_ratio < 0.5:
+        warnings.append(f"Potential aliasing - Nyquist frequency reduced to {new_sr/2:.0f}Hz")
+    
+    return {
+        'quality_level': quality,
+        'rms_energy': float(rms_energy),
+        'dynamic_range_db': float(dynamic_range),
+        'warnings': warnings,
+        'nyquist_frequency': new_sr / 2
+    }
+
+# Update the status endpoint
+@app.route("/api/audio-downsampling-status", methods=["GET"])
+def audio_downsampling_status():
+    """Get audio downsampling system status"""
+    return jsonify({
+        "downsampling_available": True,
+        "voicefixer_available": downsampler.voicefixer is not None,
+        "supported_formats": downsampler.supported_formats,
+        "sample_rate_limits": {"min": 1000, "max": 192000},
+        "resampling_method": "Simple Decimation (Intentional Aliasing)",
+        "features": [
+            "Two-step downsampling process",
+            "Extreme downsampling (1000Hz+)", 
+            "VoiceFixer audio restoration",
+            "Waveform visualization",
+            "Quality assessment",
+            "Temporary file cleanup"
+        ],
+        "endpoints": {
+            "step1_downsample": "/api/downsample-audio (POST)",
+            "step2_voicefixer": "/api/apply-voicefixer (POST)",
+            "restore_only": "/api/restore-audio (POST)",
+            "download": "/api/download-downsampled/<path> (GET)",
+            "cleanup": "/api/cleanup-audio (POST)",
+            "status": "/api/audio-downsampling-status (GET)"
+        }
+    })
+
+# Add missing utility functions if needed
+def allowed_audio_file(filename):
+    """Check if the file has an allowed audio extension"""
+    ALLOWED_AUDIO_EXTENSIONS = {'wav', 'mp3', 'flac', 'm4a', 'aac'}
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_AUDIO_EXTENSIONS
+
+# Add cleanup endpoint to manage temporary files
+@app.route('/api/cleanup-audio', methods=['POST'])
+def cleanup_audio():
+    """Clean up temporary audio files"""
+    try:
+        data = request.get_json()
+        file_id = data.get('file_id')
+        
+        if file_id and file_id in downsampled_files_cache:
+            file_path = downsampled_files_cache[file_id]
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                print(f"🧹 Cleaned up temporary file: {file_path}")
+            del downsampled_files_cache[file_id]
+        
+        return jsonify({'success': True, 'message': 'Cleanup completed'})
+    except Exception as e:
+        print(f"❌ Cleanup error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# Add download endpoint
+@app.route('/api/download-downsampled/<file_id>')
+def download_downsampled(file_id):
+    """Download processed audio file"""
+    try:
+        if file_id not in downsampled_files_cache:
+            return jsonify({'error': 'File not found'}), 404
+        
+        file_path = downsampled_files_cache[file_id]
+        if not os.path.exists(file_path):
+            return jsonify({'error': 'File not found on server'}), 404
+        
+        return send_file(file_path, as_attachment=True, download_name=f"processed_audio_{file_id}.wav")
+    except Exception as e:
+        print(f"❌ Download error: {e}")
+        return jsonify({'error': str(e)}), 500
     
 # =============================================================================
 
@@ -1903,160 +2446,7 @@ def get_doppler_downsampling_waveform(filename):
     except Exception as e:
         return jsonify({"error": f"Waveform extraction failed: {str(e)}"}), 500
         
-        
-# # ⬆️ رفع ملف الصوت
-# @app.route("/doppler-downsampling-upload", methods=["POST"])
-# def upload_doppler_downsampling_audio():
-#     file = request.files["file"]
-#     file_path = os.path.join(DOPPLER_DOWNSAMPLING_UPLOAD_FOLDER, file.filename)
-#     file.save(file_path)
-#     return jsonify({"filename": file.filename})
-
-
-# # 🎚️ تنفيذ عملية الـ downsampling
-# @app.route("/doppler-downsampling", methods=["POST"])
-# def doppler_downsample():
-#     try:
-#         data = request.get_json()
-#         if not data or "filename" not in data or "sample_rate" not in data:
-#             return jsonify({"error": "Missing 'filename' or 'sample_rate'"}), 400
-
-#         filename = os.path.basename(data["filename"])
-#         new_sr = int(data["sample_rate"])
-
-#         if new_sr <= 0:
-#             return jsonify({"error": "Invalid sample rate"}), 400
-
-#         in_path = os.path.join(DOPPLER_DOWNSAMPLING_UPLOAD_FOLDER, filename)
-#         if not os.path.exists(in_path):
-#             return jsonify({"error": "File not found"}), 404
-
-#         waveform, orig_sr = torchaudio.load(in_path)
-#         aliased = F.resample(waveform, orig_freq=orig_sr, new_freq=new_sr)
-
-#         out_path = os.path.join(DOPPLER_DOWNSAMPLING_PROCESSED_FOLDER, f"{new_sr}_{filename}")
-#         torchaudio.save(out_path, aliased, new_sr)
-
-#         return jsonify({
-#             "sample_rate": new_sr,
-#             "audio_url": f"/doppler-downsampling-processed/{new_sr}_{filename}"
-#         })
-
-#     except Exception as e:
-#         return jsonify({"error": str(e)}), 500
-
-
-# # 🔊 تقديم الملف الناتج لتشغيله
-# @app.route("/doppler-downsampling-processed/<filename>")
-# def serve_doppler_downsampling_audio(filename):
-#     return send_from_directory(DOPPLER_DOWNSAMPLING_PROCESSED_FOLDER, filename)
-
-
-# # 💾 تحميل الملف الناتج
-# @app.route("/doppler-downsampling-download/<filename>")
-# def download_dopple_downsampling_audio(filename):
-#     safe_name = os.path.basename(filename)
-#     file_path = os.path.join(DOPPLER_DOWNSAMPLING_PROCESSED_FOLDER, safe_name)
-#     if not os.path.exists(file_path):
-#         return jsonify({"error": "File not found"}), 404
-#     return send_from_directory(DOPPLER_DOWNSAMPLING_PROCESSED_FOLDER, safe_name, as_attachment=True)
-
-
-# # 📈 رسم شكل الموجة
-# @app.route("/doppler-downsampling-waveform/<filename>")
-# def get_doppler_downsampling_waveform(filename):
-#     safe_name = os.path.basename(filename)
-#     file_path = os.path.join(DOPPLER_DOWNSAMPLING_PROCESSED_FOLDER, safe_name)
-#     if not os.path.exists(file_path):
-#         return jsonify({"error": "File not found"}), 404
-
-#     waveform, sr = torchaudio.load(file_path)
-#     data = waveform[0].tolist()
-#     max_points = 2000
-#     step = max(1, len(data) // max_points)
-#     downsampled = data[::step]
-
-#     return jsonify({
-#         "sample_rate": sr,
-#         "waveform": downsampled
-#     })
-
-# # =============================================================================
-# # Drone Analysis Endpoints
-# # =============================================================================
-
-# @app.route("/drone-test", methods=["GET"])
-# def drone_test():
-#     """Test endpoint for drone analysis"""
-#     return jsonify({
-#         "message": "Drone analysis endpoint is working",
-#         "model_loaded": model is not None,
-#         "processor_loaded": processor is not None,
-#         "endpoints": {
-#             "test": "/drone-test (GET)",
-#             "predict": "/predict (POST)",
-#             "health": "/api/health (GET)"
-#         },
-#         "instructions": "Send a POST request to /predict with an audio file"
-#     })
-
-# @app.route("/test-audio", methods=["POST"])
-# def test_audio():
-#     """Test endpoint to check if audio files are valid"""
-#     if "file" not in request.files:
-#         return jsonify({"error": "No file uploaded"}), 400
-
-#     file = request.files["file"]
-#     if file.filename == "":
-#         return jsonify({"error": "No file selected"}), 400
-
-#     try:
-#         # Save file temporarily
-#         temp_path = os.path.join(UPLOAD_DIR, f"test_{secure_filename(file.filename)}")
-#         file.save(temp_path)
-        
-#         # Get file info
-#         file_size = os.path.getsize(temp_path)
-        
-#         # Test loading with librosa
-#         waveform, sr = librosa.load(temp_path, sr=None)
-#         duration = len(waveform) / sr
-        
-#         # Clean up
-#         os.remove(temp_path)
-        
-#         return jsonify({
-#             "valid": True,
-#             "file_size_bytes": file_size,
-#             "sample_rate": sr,
-#             "samples": len(waveform),
-#             "duration_seconds": round(duration, 2),
-#             "message": "Audio file is valid"
-#         })
-        
-#     except Exception as e:
-#         if 'temp_path' in locals() and os.path.exists(temp_path):
-#             try:
-#                 os.remove(temp_path)
-#             except:
-#                 pass
-#         return jsonify({
-#             "valid": False,
-#             "error": str(e),
-#             "message": "Audio file is invalid or corrupted"
-#         }), 400
-
-
-# @app.route("/predict/status", methods=["GET"])
-# def predict_status():
-#     """Get current prediction system status"""
-#     return jsonify({
-#         "model_loaded": model is not None,
-#         "processor_loaded": processor is not None,
-#         "system_ready": model is not None and processor is not None,
-#         "available_classes": list(model.config.id2label.values()) if model else [],
-#         "timestamp": datetime.now().isoformat()
-#     })      
+ 
 # =============================================================================
 # Drone Prediction Endpoint
 # =============================================================================

@@ -309,22 +309,22 @@
                                 <div class="processing-step">
                                     <div class="step-icon">1</div>
                                     <div>
-                                        <h6 class="mb-1 fw-bold">Feature Extraction</h6>
-                                        <p class="mb-0 text-muted small">Extract MFCC features</p>
+                                        <h6 class="mb-1 fw-bold">Gender Detection</h6>
+                                        <p class="mb-0 text-muted small">ECAPA-TDNN model analysis</p>
                                     </div>
                                 </div>
                                 <div class="processing-step">
                                     <div class="step-icon">2</div>
                                     <div>
-                                        <h6 class="mb-1 fw-bold">AI Classification</h6>
-                                        <p class="mb-0 text-muted small">ECAPA-TDNN model analysis</p>
+                                        <h6 class="mb-1 fw-bold">Audio Downsampling</h6>
+                                        <p class="mb-0 text-muted small">Simulate low-quality input</p>
                                     </div>
                                 </div>
                                 <div class="processing-step">
                                     <div class="step-icon">3</div>
                                     <div>
-                                        <h6 class="mb-1 fw-bold">Confidence Scoring</h6>
-                                        <p class="mb-0 text-muted small">Calculate prediction confidence</p>
+                                        <h6 class="mb-1 fw-bold">Voice Restoration</h6>
+                                        <p class="mb-0 text-muted small">Enhance clarity and detail</p>
                                     </div>
                                 </div>
                             </div>
@@ -364,8 +364,19 @@
                                 <button type="button" class="btn btn-outline-secondary" id="resetDownsampling">
                                     <i class="bi bi-arrow-clockwise me-2"></i>Reset to Original
                                 </button>
-                            </div>
-                        </div>
+                               <!-- Add to your downsampling section -->
+                            <!-- Replace the old VoiceFixer checkbox with these buttons -->
+                    <div class="d-flex flex-column align-items-center">
+                    <div class="mb-3">
+                        <button id="applyVoiceFixerBtn" class="btn btn-success" disabled>
+                        <i class="bi bi-magic me-2"></i>Apply VoiceFixer
+                        </button>
+                    </div>
+
+                    <div id="restorationStatus" class="text-center"></div>
+                    <span id="voicefixerStatus" class="badge bg-secondary mt-2">Checking...</span>
+                    </div>
+
                         
                         <!-- Audio Preview -->
                         <div class="result-card">
@@ -406,14 +417,14 @@
                 </div>
             </div>
             
-            <!-- Reset Button -->
+            </div>
+             <!-- Reset Button -->
             <div class="row mt-4">
                 <div class="col-12 text-center">
                     <button type="button" class="btn btn-outline-secondary" id="resetAnalysis">
                         <i class="bi bi-arrow-repeat me-2"></i>Reset Analysis
                     </button>
                 </div>
-            </div>
         </section>
         
         <!-- Footer -->
@@ -432,3 +443,4 @@
     <script src="js/voice-analysis.js"></script>
 </body>
 </html>
+
