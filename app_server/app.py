@@ -35,6 +35,7 @@ from voice_model import ECAPA_gender
 import torch.nn.functional as F
 import  torchaudio,torchaudio.functional as F
 from typing import Optional
+import time
 
 from model_detect_antialiasing import predict_label
 
@@ -741,6 +742,87 @@ class AudioDownsampler:
         except Exception as e:
             print(f"❌ VoiceFixer restoration failed: {e}")
             raise Exception(f"Voice restoration failed: {str(e)}")
+        
+      
+@app.route('/api/download-downsampled/<path:file_path>', methods=['GET'])
+def download_downsampled_audio(file_path):
+    """
+    Serve downsampled/restored audio files for playback
+    This endpoint is called by the audio elements in the frontend
+    """
+    try:
+        print(f"📥 Download request for: {file_path}")
+        
+        # Security check - ensure the file is in our temp directory
+        if not file_path or not os.path.exists(file_path):
+            return jsonify({'error': 'File not found'}), 404
+        
+        # Check if file is in a safe location (temp directory)
+        temp_dir = tempfile.gettempdir()
+        if not file_path.startswith(temp_dir):
+            return jsonify({'error': 'Invalid file path'}), 403
+        
+        # Check if file exists and is readable
+        if not os.path.isfile(file_path):
+            return jsonify({'error': 'File not found'}), 404
+        
+        print(f"✅ Serving audio file: {file_path}")
+        
+        # Serve the file with proper headers for audio playback
+        return send_file(
+            file_path,
+            as_attachment=False,  # Important: False for playback, True for download
+            download_name=os.path.basename(file_path),
+            mimetype='audio/wav'
+        )
+        
+    except Exception as e:
+        print(f"❌ Error serving audio file: {str(e)}")
+        traceback.print_exc()
+        return jsonify({'error': f'Could not serve audio file: {str(e)}'}), 500
+    
+@app.route('/api/cleanup-audio', methods=['POST'])
+def cleanup_audio_files():
+    """
+    Clean up temporary audio files
+    """
+    try:
+        data = request.get_json()
+        file_paths = data.get('file_paths', [])
+        
+        cleaned_files = []
+        for file_path in file_paths:
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                    cleaned_files.append(file_path)
+                    print(f"🧹 Cleaned up: {file_path}")
+                except Exception as e:
+                    print(f"⚠ Could not clean up {file_path}: {e}")
+        
+        # Also clean up old files from cache
+        current_time = time.time()
+        expired_files = []
+        for file_id, cached_path in list(downsampled_files_cache.items()):
+            if not os.path.exists(cached_path) or (current_time - os.path.getctime(cached_path)) > 3600:  # 1 hour
+                if os.path.exists(cached_path):
+                    try:
+                        os.remove(cached_path)
+                        expired_files.append(cached_path)
+                    except:
+                        pass
+                del downsampled_files_cache[file_id]
+        
+        return jsonify({
+            'success': True,
+            'cleaned_files': cleaned_files,
+            'expired_files': expired_files,
+            'message': 'Cleanup completed'
+        })
+        
+    except Exception as e:
+        print(f"❌ Cleanup error: {str(e)}")
+        return jsonify({'error': f'Cleanup failed: {str(e)}'}), 500
     
     def downsample_audio(self, audio_data, original_sr, target_sr):
         """
