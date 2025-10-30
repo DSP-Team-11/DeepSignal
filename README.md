@@ -376,6 +376,17 @@ DeepSignal now includes cutting-edge sampling and aliasing analysis across all s
 - Understand what the AI is detecting
 - No machine learning knowledge needed
 
+| Modality              | Pre-trained Model (link)                                                                  | Dataset(s) Used                                                                 |
+|------------------------|--------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
+| EEG                   | EEGNetv4 – [link](https://huggingface.co/PierreGtch/EEGNetv4)                              | BrainLat-19 processed via [LEAD](https://github.com/DL4mHealth/LEAD.git)         |
+| ECG                   | Ribeiro DNN ECG Model – [link](https://zenodo.org/records/3765717)                                    | Chapman’s Dataset – [link](https://www.physionet.org/content/ecg-arrhythmia/1.0.0/) |
+| Drone / Audio         | DroneAudioDataset – [link](https://github.com/saraalemadi/DroneAudioDataset)               | Drone propeller noise + augmented noise                                          |
+| SAR / Radar           | (No major “foundation model” link found)                                                   | RealSAR dataset (GBSAR 24 GHz) for multi-object radar imagery                    |
+| Voice Restoration     | VoiceFixer – [link](https://github.com/haoheliu/voicefixer)                                | Degraded speech with noise, reverberation, clipping, etc.                        |
+| Voice Classification  | ECAPA-TDNN – [link](https://huggingface.co/speechbrain/spkrec-ecapa-voxceleb)              | **CMU Arctic dataset** (English speech corpus for voice analysis)                |
+
+
+
 ## Who Is This For?
 
 - **Students** learning about signals, waves, and sampling theory
@@ -393,4 +404,4 @@ DeepSignal now includes cutting-edge sampling and aliasing analysis across all s
 4. **Explore the different viewers** to see your data in various ways
 5. **Get AI insights** about what your signals contain
 6. **Experiment with sampling** using our interactive downsampling controls
-7. **Test anti-aliasing** with our VoiceFixer restoration system
+7. **Test anti-aliasing** with our restoration systems
