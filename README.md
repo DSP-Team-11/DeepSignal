@@ -379,12 +379,11 @@ DeepSignal now includes cutting-edge sampling and aliasing analysis across all s
 | Modality              | Pre-trained Model (link)                                                                  | Dataset(s) Used                                                                 |
 |------------------------|--------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
 | EEG                   | EEGNetv4 – [link](https://huggingface.co/PierreGtch/EEGNetv4)                              | BrainLat-19 processed via [LEAD](https://github.com/DL4mHealth/LEAD.git)         |
-| ECG                   | Ribeiro DNN ECG Model – [link](https://zenodo.org/records/3765717)                                    | Chapman’s Dataset – [link](https://www.physionet.org/content/ecg-arrhythmia/1.0.0/) |
-| Drone / Audio         | DroneAudioDataset – [link](https://github.com/saraalemadi/DroneAudioDataset)               | Drone propeller noise + augmented noise                                          |
+| ECG                   | Ribeiro DNN ECG Model – [link](https://zenodo.org/records/3765717)                         | CODE Dataset (12-lead ECGs from Brazil’s Telehealth Network)                     |
+| Drone / Audio         | Drone Audio Detection – [link](https://huggingface.co/preszzz/drone-audio-detection-05-17-trial-0) | *No training data or preprocessing applied*                                      |
 | SAR / Radar           | (No major “foundation model” link found)                                                   | RealSAR dataset (GBSAR 24 GHz) for multi-object radar imagery                    |
 | Voice Restoration     | VoiceFixer – [link](https://github.com/haoheliu/voicefixer)                                | Degraded speech with noise, reverberation, clipping, etc.                        |
 | Voice Classification  | ECAPA-TDNN – [link](https://huggingface.co/speechbrain/spkrec-ecapa-voxceleb)              | **CMU Arctic dataset** (English speech corpus for voice analysis)                |
-
 
 
 ## Who Is This For?
