@@ -269,7 +269,7 @@ DeepSignal now includes cutting-edge sampling and aliasing analysis across all s
   </a>
 </p>
 <p align="center">
-  <a href="https://youtu.be/TmSK4i-R5O4" target="_blank">
+  <a href="https://youtu.be/mYR3wrvp_Sw" target="_blank">
     <img src="https://img.shields.io/badge/%20Watch%20Demo-red?style=for-the-badge&logo=youtube" alt="Watch on YouTube"/>
   </a>
 </p>
@@ -289,7 +289,7 @@ DeepSignal now includes cutting-edge sampling and aliasing analysis across all s
   </a>
 </p>
 <p align="center">
-  <a href="https://youtu.be/TmSK4i-R5O4" target="_blank">
+  <a href="https://youtu.be/-QTXyoinXyc" target="_blank">
     <img src="https://img.shields.io/badge/%20Watch%20Demo-red?style=for-the-badge&logo=youtube" alt="Watch on YouTube"/>
   </a>
 </p>
@@ -309,7 +309,7 @@ DeepSignal now includes cutting-edge sampling and aliasing analysis across all s
   </a>
 </p>
 <p align="center">
-  <a href="https://youtu.be/TmSK4i-R5O4" target="_blank">
+  <a href="https://youtu.be/u3zzGZsbvww" target="_blank">
     <img src="https://img.shields.io/badge/%20Watch%20Demo-red?style=for-the-badge&logo=youtube" alt="Watch on YouTube"/>
   </a>
 </p>
@@ -329,7 +329,7 @@ DeepSignal now includes cutting-edge sampling and aliasing analysis across all s
   </a>
 </p>
 <p align="center">
-  <a href="https://youtu.be/TmSK4i-R5O4" target="_blank">
+  <a href="https://youtu.be/bmZf2S8Bbgs" target="_blank">
     <img src="https://img.shields.io/badge/%20Watch%20Demo-red?style=for-the-badge&logo=youtube" alt="Watch on YouTube"/>
   </a>
 </p>
