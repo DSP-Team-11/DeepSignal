@@ -205,7 +205,7 @@ DeepSignal now includes cutting-edge sampling and aliasing analysis across all s
 </p>
 
 **Doppler Effect Analysis**:
-- **Real-time Sampling Control**: Adjust audio sampling rates from 44.1kHz down to critical levels to study aliasing effects
+- **Real-time Sampling Control**: Adjust audio sampling rates down to critical levels to study aliasing effects
 - **Frequency Resolution Testing**: See how reduced sampling rates affect Doppler frequency shift detection accuracy
 - **Velocity Calculation Accuracy**: Watch how speed estimation precision degrades with undersampling
 - **Nyquist Limit Demonstration**: Experience what happens when vehicle frequencies exceed the Nyquist frequency
