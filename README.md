@@ -185,7 +185,8 @@ DeepSignal now includes cutting-edge sampling and aliasing analysis across all s
    - Watch how different heart conditions become harder to detect
    - See confidence scores drop as aliasing increases
 
-<video src="https://github.com/DeepSignal/1_site_pics/raw/main/ecg%20downsampling%20(1).mp4" controls width="600"></video>
+[![Watch the video](https://img.youtube.com/vi/TmSK4i-R5O4/maxresdefault.jpg)](https://youtu.be/TmSK4i-R5O4)
+
 
 2. **Voice Quality Experiment**:
    - Record or upload voice audio
