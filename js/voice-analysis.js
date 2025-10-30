@@ -879,26 +879,26 @@ async function updateVoiceFixerStep2UI(result) {
         }
     }
 
-    // Update the slider for proper downsampling range
-    if (elements.downsampleSlider) {
-        // Extended range for extreme downsampling with VoiceFixer
-        elements.downsampleSlider.min = 1000;   // Very low - extreme aliasing
-        elements.downsampleSlider.max = 48000;  // Maximum for high quality
-        elements.downsampleSlider.value = 8000; // Default to noticeable aliasing
-        elements.downsampleSlider.step = 1000;
-        
-        // Set initial value display
-        if (elements.sampleRateValue) {
-            elements.sampleRateValue.textContent = '8000 Hz (Nyquist: 4000Hz - Clear Aliasing)';
+            // Update the slider for proper downsampling range
+        if (elements.downsampleSlider) {
+            // Extended range for extreme downsampling with VoiceFixer
+            elements.downsampleSlider.min = 4000;   // Very low - extreme aliasing
+            elements.downsampleSlider.max = 48000;  // Maximum for high quality
+            elements.downsampleSlider.value = 16000; // Default to good quality
+            elements.downsampleSlider.step = 1000;
+            
+            // Set initial value display to match the actual slider value
+            if (elements.sampleRateValue) {
+                elements.sampleRateValue.textContent = '16000 Hz (Nyquist: 8000Hz)';
+            }
         }
-    }
-    
+            
     // Reset downsampling
     function resetDownsampling() {
         if (elements.downsampledAudioContainer) elements.downsampledAudioContainer.style.display = 'none';
         if (elements.noDownsampledAudio) elements.noDownsampledAudio.style.display = 'block';
-        if (elements.downsampleSlider) elements.downsampleSlider.value = 8000;
-        if (elements.sampleRateValue) elements.sampleRateValue.textContent = '8000 Hz (Nyquist: 4000Hz - Clear Aliasing)';
+        if (elements.downsampleSlider) elements.downsampleSlider.value = 16000;
+        if (elements.sampleRateValue) elements.sampleRateValue.textContent = '16000 Hz (Nyquist: 8000Hz)';
         
         // Clear downsampled waveform
         if (elements.downsampledWaveform) {
