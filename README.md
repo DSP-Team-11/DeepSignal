@@ -146,23 +146,77 @@ DeepSignal now includes cutting-edge sampling and aliasing analysis across all s
 - **Aliasing Impact Assessment**: See how undersampling affects heart condition detection
 - **Confidence Scoring**: Watch AI confidence drop as aliasing increases
 - **Clinical Risk Evaluation**: Understand which heart conditions become harder to detect
+<p align="center">
+  <img src="1_site_pics/Screenshot 2025-10-30 224411.png" alt="DeepSignal Preview" >
+</p>
+<p align="center">
+  <img src="1_site_pics/Screenshot 2025-10-30 224427.png" alt="DeepSignal Preview" >
+</p>
+<p align="center">
+  <img src="1_site_pics/Screenshot 2025-10-30 224507.png" alt="DeepSignal Preview" >
+</p>
 
 **EEG Brain Signals:**
 - **Frequency Domain Processing**: Apply Nyquist downsampling while preserving temporal relationships
 - **Model Performance Comparison**: Compare original vs downsampled classification results
 - **Neurological Impact Study**: See how sampling affects Alzheimer's, Parkinson's, and dementia detection
 - **Multi-channel Analysis**: Process all 19 EEG channels simultaneously with consistent downsampling
+<p align="center">
+  <img src="1_site_pics/Screenshot 2025-10-30 224624.png" alt="DeepSignal Preview" >
+</p>
 
-**Voice & Acoustic Signals:**
+<p align="center">
+  <img src="1_site_pics/Screenshot 2025-10-30 224638.png" alt="DeepSignal Preview" >
+</p>
+
+<p align="center">
+  <img src="1_site_pics/Screenshot 2025-10-30 224701.png" alt="DeepSignal Preview" >
+</p>
+
+**Voice Signals:**
 - **Interactive Sampling Control**: Use sliders to adjust sampling rates from 1000Hz to 192000Hz
 - **Real-time Aliasing Effects**: Hear how voice quality degrades as sampling decreases
 - **Voice Gender Classification**: Test ECAPA-TDNN model performance under aliasing conditions
 - **Quality Assessment**: Get instant feedback on audio quality levels from "Extreme Aliasing" to "High Quality"
 
+<p align="center">
+  <img src="1_site_pics/Screenshot 2025-10-30 225104.png" alt="DeepSignal Preview" >
+</p>
+
+<p align="center">
+  <img src="1_site_pics/Screenshot 2025-10-30 225152.png" alt="DeepSignal Preview" >
+</p>
+
+<p align="center">
+  <img src="1_site_pics/Screenshot 2025-10-30 225209.png" alt="DeepSignal Preview" >
+</p>
+
 **Drone Audio Detection:**
 - **AI Model Robustness Testing**: See how drone detection confidence changes with sampling
 - **Comparative Analysis**: Compare original vs aliased classification results
 - **Real-world Impact**: Understand practical implications for security and monitoring systems
+
+<p align="center">
+  <img src="1_site_pics/Screenshot 2025-10-30 224907.png" alt="DeepSignal Preview" >
+</p>
+
+<p align="center">
+  <img src="1_site_pics/Screenshot 2025-10-30 224933.png" alt="DeepSignal Preview" >
+</p>
+
+**Doppler Effect Analysis**:
+- **Real-time Sampling Control**: Adjust audio sampling rates from 44.1kHz down to critical levels to study aliasing effects
+- **Frequency Resolution Testing**: See how reduced sampling rates affect Doppler frequency shift detection accuracy
+- **Velocity Calculation Accuracy**: Watch how speed estimation precision degrades with undersampling
+- **Nyquist Limit Demonstration**: Experience what happens when vehicle frequencies exceed the Nyquist frequency
+
+<p align="center">
+  <img src="1_site_pics/Screenshot 2025-10-30 225004.png" alt="DeepSignal Preview" >
+</p>
+
+<p align="center">
+  <img src="1_site_pics/Screenshot 2025-10-30 225021.png" alt="DeepSignal Preview" >
+</p>
 
 ### Anti-Aliasing & Signal Recovery
 
@@ -185,7 +239,19 @@ DeepSignal now includes cutting-edge sampling and aliasing analysis across all s
    - Watch how different heart conditions become harder to detect
    - See confidence scores drop as aliasing increases
 
-[![Watch the video](https://img.youtube.com/vi/TmSK4i-R5O4/maxresdefault.jpg)](https://youtu.be/TmSK4i-R5O4)
+<p align="center">
+  <a href="https://youtu.be/TmSK4i-R5O4" target="_blank">
+    <img src="https://img.youtube.com/vi/TmSK4i-R5O4/maxresdefault.jpg" 
+         alt="Watch the demo video" 
+         width="70%" 
+         style="border-radius: 10px;"/>
+  </a>
+</p>
+<p align="center">
+  <a href="https://youtu.be/TmSK4i-R5O4" target="_blank">
+    <img src="https://img.shields.io/badge/%20Watch%20Demo-red?style=for-the-badge&logo=youtube" alt="Watch on YouTube"/>
+  </a>
+</p>
 
 
 2. **Voice Quality Experiment**:
@@ -194,28 +260,80 @@ DeepSignal now includes cutting-edge sampling and aliasing analysis across all s
    - Apply VoiceFixer to hear AI-powered restoration
    - Test gender classification under aliasing conditions
 
-<video src="demo.mp4" width="600" controls></video>
+<p align="center">
+  <a href="https://youtu.be/mYR3wrvp_Sw" target="_blank">
+    <img src="https://img.youtube.com/vi/TmSK4i-R5O4/maxresdefault.jpg" 
+         alt="Watch the demo video" 
+         width="70%" 
+         style="border-radius: 10px;"/>
+  </a>
+</p>
+<p align="center">
+  <a href="https://youtu.be/TmSK4i-R5O4" target="_blank">
+    <img src="https://img.shields.io/badge/%20Watch%20Demo-red?style=for-the-badge&logo=youtube" alt="Watch on YouTube"/>
+  </a>
+</p>
+
 
 3. **Drone Detection Robustness**:
    - Test drone audio with various sampling rates
    - See how detection confidence changes
    - Understand real-world implications for monitoring systems
 
-<video src="demo.mp4" width="600" controls></video>
+<p align="center">
+  <a href="https://youtu.be/-QTXyoinXyc" target="_blank">
+    <img src="https://img.youtube.com/vi/TmSK4i-R5O4/maxresdefault.jpg" 
+         alt="Watch the demo video" 
+         width="70%" 
+         style="border-radius: 10px;"/>
+  </a>
+</p>
+<p align="center">
+  <a href="https://youtu.be/TmSK4i-R5O4" target="_blank">
+    <img src="https://img.shields.io/badge/%20Watch%20Demo-red?style=for-the-badge&logo=youtube" alt="Watch on YouTube"/>
+  </a>
+</p>
+
 
 4. **EEG Sampling Study**:
    - Analyze brain signals with different sampling rates
    - Compare neurological condition detection accuracy
    - Learn about minimum sampling requirements for reliable diagnosis
 
-<video src="demo.mp4" width="600" controls></video>
+<p align="center">
+  <a href="https://youtu.be/u3zzGZsbvww" target="_blank">
+    <img src="https://img.youtube.com/vi/TmSK4i-R5O4/maxresdefault.jpg" 
+         alt="Watch the demo video" 
+         width="70%" 
+         style="border-radius: 10px;"/>
+  </a>
+</p>
+<p align="center">
+  <a href="https://youtu.be/TmSK4i-R5O4" target="_blank">
+    <img src="https://img.shields.io/badge/%20Watch%20Demo-red?style=for-the-badge&logo=youtube" alt="Watch on YouTube"/>
+  </a>
+</p>
 
 5. **Doppler Effect Exploration**:
-
 - Generate different vehicle sounds with Doppler shift
 - Upload real traffic recordings for speed analysis
 - Experiment with different signal types and parameters
 - Visualize frequency changes in spectrograms
+
+<p align="center">
+  <a href="https://youtu.be/bmZf2S8Bbgs" target="_blank">
+    <img src="https://img.youtube.com/vi/TmSK4i-R5O4/maxresdefault.jpg" 
+         alt="Watch the demo video" 
+         width="70%" 
+         style="border-radius: 10px;"/>
+  </a>
+</p>
+<p align="center">
+  <a href="https://youtu.be/TmSK4i-R5O4" target="_blank">
+    <img src="https://img.shields.io/badge/%20Watch%20Demo-red?style=for-the-badge&logo=youtube" alt="Watch on YouTube"/>
+  </a>
+</p>
+
 
 ### Educational Value & Practical Applications
 
